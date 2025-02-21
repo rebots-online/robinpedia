@@ -1,0 +1,96 @@
+{
+  "repository_info": {
+    "name": "Robinpedia ZIM Repository",
+    "version": "1.0.0",
+    "last_updated": "2024-03-17T00:00:00Z",
+    "maintainer": "Robin L. M. Cheung",
+    "contact": "robinpedia@robin.bio",
+    "website": "https://www.robin.bio/robinpedia"
+  },
+  "zim_files": [
+    {
+      "filename": "wikipedia_en_100_2024-06.zim",
+      "title": "Wikipedia English Top 100K (Full)",
+      "description": "Complete Wikipedia dump of the top 100,000 articles with all media",
+      "language": "en",
+      "date": "2024-06",
+      "size_bytes": 385875968,
+      "article_count": 100000,
+      "version": "2024-06",
+      "license": "CC BY-SA 3.0",
+      "source": "Wikipedia",
+      "categories": ["encyclopedia", "english", "complete"],
+      "features": ["text", "images", "media"],
+      "mirrors": [
+        {
+          "url": "https://robinpedia.robin.bio/zim/wikipedia_en_100_2024-06.zim",
+          "region": "US",
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "filename": "wikipedia_en_100_maxi_2024-06.zim",
+      "title": "Wikipedia English Top 100K (Maxi)",
+      "description": "Wikipedia top 100,000 articles with selected media",
+      "language": "en",
+      "date": "2024-06",
+      "size_bytes": 38797312,
+      "article_count": 100000,
+      "version": "2024-06",
+      "license": "CC BY-SA 3.0",
+      "source": "Wikipedia",
+      "categories": ["encyclopedia", "english", "maxi"],
+      "features": ["text", "images"],
+      "mirrors": [
+        {
+          "url": "https://robinpedia.robin.bio/zim/wikipedia_en_100_maxi_2024-06.zim",
+          "region": "US",
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "filename": "wikipedia_en_100_mini_2024-06.zim",
+      "title": "Wikipedia English Top 100K (Mini)",
+      "description": "Wikipedia top 100,000 articles with minimal media",
+      "language": "en",
+      "date": "2024-06",
+      "size_bytes": 13631488,
+      "article_count": 100000,
+      "version": "2024-06",
+      "license": "CC BY-SA 3.0",
+      "source": "Wikipedia",
+      "categories": ["encyclopedia", "english", "mini"],
+      "features": ["text", "minimal_images"],
+      "mirrors": [
+        {
+          "url": "https://robinpedia.robin.bio/zim/wikipedia_en_100_mini_2024-06.zim",
+          "region": "US",
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "filename": "wikipedia_en_100_nopic_2024-06.zim",
+      "title": "Wikipedia English Top 100K (No Pictures)",
+      "description": "Text-only version of Wikipedia top 100,000 articles",
+      "language": "en",
+      "date": "2024-06",
+      "size_bytes": 14680064,
+      "article_count": 100000,
+      "version": "2024-06",
+      "license": "CC BY-SA 3.0",
+      "source": "Wikipedia",
+      "categories": ["encyclopedia", "english", "text-only"],
+      "features": ["text"],
+      "mirrors": [
+        {
+          "url": "https://robinpedia.robin.bio/zim/wikipedia_en_100_nopic_2024-06.zim",
+          "region": "US",
+          "priority": 1
+        }
+      ]
+    }
+  ]
+}

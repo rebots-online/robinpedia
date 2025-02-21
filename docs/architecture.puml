@@ -1,0 +1,58 @@
+@startuml Robinpedia Architecture
+
+package "Robinpedia" {
+  [UI Layer] as UI
+  [Business Logic] as BL
+  [Data Layer] as DL
+  
+  package "Core Components" {
+    [ZIM Parser] as Parser
+    [ZIM Downloader] as Downloader
+    [Content Manager] as CM
+    [Search Engine] as Search
+  }
+  
+  database "Local Storage" as Storage
+  
+  cloud "Remote Repository" {
+    [ZIM Files] as Remote
+    [Metadata] as Meta
+  }
+}
+
+UI --> BL
+BL --> DL
+DL --> Storage
+
+Parser --> DL
+Downloader --> DL
+CM --> DL
+Search --> DL
+
+Downloader --> Remote
+Remote --> Meta
+
+note right of Remote
+  Repository Structure:
+  /zim/
+    - index.json
+    - descriptions/
+    - files/
+end note
+
+note right of Parser
+  Handles:
+  - File Format
+  - Content Extraction
+  - Navigation
+end note
+
+note right of UI
+  Features:
+  - Article View
+  - Search
+  - Downloads
+  - Settings
+end note
+
+@enduml
