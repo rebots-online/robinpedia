@@ -1,6 +1,29 @@
 # Robinpedia
 
+Copyright(C)2025 Robin L. M. Cheung. All rights reserved.
+NB: While a more final implementation is intended to be open-sourced, there are concepts not intended to be 'out in the wild' as yet.
+Thus, the bulk of the repo will remain privately-hosted until a later date.
+
 Your offline knowledge companion - a cozy space for learning and sharing knowledge.
+
+## INTRODUCTION
+ 
+ - This represents a 'clean room'-inspired implementation insofar as the basic ZIM reader concept is implemented as part of this de novo codebase
+ - Intended to overcome technical and licencing limitations of existing efforts
+
+### Departures
+
+ - Technical Issues: Android storage issues deriving from older implementations and Googe Play Store policy changes that are somewhat complex to back out anda change directions
+ - Licence Issues: some existing repos are encumbered by strict 'Copyleft' licence regimes, which can cause unintended restrictive side effects
+
+### Innovations
+
+ - However, it is redesigned beyond navigation of ZIM files as a standard website archival format, preferring to anticipate than to retrofit:
+ - We implement pragmatic innovations, such as an annotation and navigation system that anticipates our imminent migration to a Knowledge Graph-based representation of the information
+ - Annotations, thus are intended to be regarded as a derivate of, but still part of, an overall Knowledge Graph paradigm and considered when synthesizing across enmeshed knowledge
+ - Measures of internal consistency, self-healing, and quantitative synthesis across the knowledge graph (1st order) and across its derivatives (2nd order) are anticipatively incorporated in the design
+ - Inspired by other 'offline crowdsourcepedia readers,' popular amongst 'prepper culture' in particular;
+
 
 ## Features
 
