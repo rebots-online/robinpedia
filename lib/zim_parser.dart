@@ -31,7 +31,7 @@ class DirectoryEntry {
 
   @override
   String toString() =>
-      'DirectoryEntry(namespace: $namespace, url: $url, title: $title)';
+      'DirectoryEntry(namespace: $namespace, url: $url, title: $title, mimeType: $mimeType, cluster: $clusterNumber, blob: $blobNumber)';
 }
 
 /// Manages parsing and reading of ZIM format files
@@ -44,8 +44,6 @@ class ZimParser {
   final _titleIndex = SplayTreeMap<String, DirectoryEntry>();
 
   static const int HEADER_SIZE = 72;
-  static const int MIME_LIST_ITEM_SIZE = 4;
-  static const int DIRECTORY_ENTRY_SIZE = 30;
 
   ZimParser(this.filePath);
 
@@ -91,14 +89,19 @@ class ZimParser {
 
   /// Read MIME type list from the ZIM file
   Future<void> _readMimeTypes() async {
+    _mimeTypes.clear();
     await _file.setPosition(_header['mimeListPos']);
 
     while (true) {
       final mimeBytes = await _readNullTerminatedString();
       if (mimeBytes.isEmpty) break;
 
-      _mimeTypes.add(String.fromCharCodes(mimeBytes));
+      final mimeType = String.fromCharCodes(mimeBytes);
+      print('Found MIME type: $mimeType'); // Debug
+      _mimeTypes.add(mimeType);
     }
+
+    print('Read ${_mimeTypes.length} MIME types: $_mimeTypes'); // Debug
   }
 
   /// Build URL and title indices for fast article lookup
@@ -109,17 +112,24 @@ class ZimParser {
     await _file.setPosition(_header['urlPtrPos']);
     final urlPointers = await _readPointers(articleCount);
 
+    print('URL Pointers: $urlPointers'); // Debug
+
     // Read directory entries and build indices
     for (var i = 0; i < articleCount; i++) {
+      print(
+          'Reading directory entry $i at position ${urlPointers[i]}'); // Debug
       await _file.setPosition(urlPointers[i]);
       final entry = await _readDirectoryEntry();
       if (entry != null) {
+        print('Found entry: $entry'); // Debug
         _urlIndex[entry.url] = entry;
         if (entry.isArticle) {
           _titleIndex[entry.title] = entry;
         }
       }
     }
+
+    print('Built indices with ${_urlIndex.length} entries'); // Debug
   }
 
   /// Read a list of pointers from the current file position
@@ -128,8 +138,12 @@ class ZimParser {
     final buffer = ByteData(8);
 
     for (var i = 0; i < count; i++) {
+      print(
+          'Reading pointer $i at position ${await _file.position()}'); // Debug
       await _file.readInto(buffer.buffer.asUint8List());
-      pointers.add(buffer.getUint64(0, Endian.little));
+      final pointer = buffer.getUint64(0, Endian.little);
+      print('Found pointer: $pointer'); // Debug
+      pointers.add(pointer);
     }
 
     return pointers;
@@ -138,8 +152,15 @@ class ZimParser {
   /// Read a single directory entry from the current file position
   Future<DirectoryEntry?> _readDirectoryEntry() async {
     try {
+      final startPos = await _file.position();
+      print('Reading directory entry at position $startPos'); // Debug
+
       final mimeTypeId = await _readByte();
-      if (mimeTypeId < 0 || mimeTypeId >= _mimeTypes.length) return null;
+      print('MIME type ID: $mimeTypeId'); // Debug
+      if (mimeTypeId < 0 || mimeTypeId >= _mimeTypes.length) {
+        print('Invalid MIME type ID'); // Debug
+        return null;
+      }
 
       final parameterLen = await _readByte();
       final namespace = String.fromCharCode(await _readByte());
@@ -147,12 +168,15 @@ class ZimParser {
       final clusterNumber = await _readInt32();
       final blobNumber = await _readInt32();
 
+      print(
+          'Basic fields: namespace=$namespace, revision=$revision, cluster=$clusterNumber, blob=$blobNumber'); // Debug
+
       final url = await _readNullTerminatedString();
       final title = await _readNullTerminatedString();
       final parameters =
           parameterLen > 0 ? await _file.read(parameterLen) : null;
 
-      return DirectoryEntry(
+      final entry = DirectoryEntry(
         mimeType: _mimeTypes[mimeTypeId],
         namespace: namespace,
         revision: revision,
@@ -162,7 +186,11 @@ class ZimParser {
         title: String.fromCharCodes(title),
         parameters: parameters,
       );
+
+      print('Created entry: $entry'); // Debug
+      return entry;
     } catch (e) {
+      print('Error reading directory entry: $e'); // Debug
       throw ZimParserException('Error reading directory entry: $e');
     }
   }
@@ -175,6 +203,11 @@ class ZimParser {
       if (byte <= 0) break;
       bytes.add(byte);
     }
+
+    if (bytes.isNotEmpty) {
+      print('Read string: ${String.fromCharCodes(bytes)}'); // Debug
+    }
+
     return bytes;
   }
 
@@ -196,6 +229,7 @@ class ZimParser {
 
   /// Search for articles by title prefix
   List<DirectoryEntry> searchByTitle(String prefix, {int limit = 10}) {
+    if (prefix.isEmpty) return const [];
     return _titleIndex.entries
         .where(
             (entry) => entry.key.toLowerCase().startsWith(prefix.toLowerCase()))
@@ -209,6 +243,11 @@ class ZimParser {
 
   /// Get cluster count
   int get clusterCount => _header['clusterCount'];
+
+  /// Get all entries (for debugging)
+  List<DirectoryEntry> getAllEntries() {
+    return _urlIndex.values.toList();
+  }
 
   /// Clean up resources
   Future<void> close() async {
