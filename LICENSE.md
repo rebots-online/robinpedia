@@ -1,6 +1,6 @@
 # Proprietary License
 
-Copyright (c) 2025 Robin Zimmern. All rights reserved.
+Copyright (c) 2025 Robin L. M. Cheung. All rights reserved.
 
 This software and associated documentation files (the "Software") are proprietary and confidential. 
 The Software is protected by copyright laws and international treaty provisions. 
