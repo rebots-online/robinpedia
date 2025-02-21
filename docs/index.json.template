@@ -1,0 +1,100 @@
+{
+  "repository_info": {
+    "name": "Robinpedia ZIM Repository",
+    "version": "1.0.0",
+    "last_updated": "2024-03-17T00:00:00Z",
+    "maintainer": "Robin L. M. Cheung",
+    "contact": "robinpedia@robinsai.world",
+    "website": "https://robinsai.world/robinpedia"
+  },
+  "zim_files": [
+    {
+      "filename": "wikipedia_en_100_mini_2024-06.zim",
+      "title": "Wikipedia English Mini",
+      "description": "A compact version of English Wikipedia containing the top 100,000 articles",
+      "language": "en",
+      "date": "2024-06",
+      "size_bytes": 1234567890,
+      "article_count": 100000,
+      "version": "2024-06",
+      "license": "CC BY-SA 3.0",
+      "source": "Wikipedia",
+      "categories": ["encyclopedia", "english", "mini"],
+      "features": ["text", "minimal_images"],
+      "checksum": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "mirrors": [
+        {
+          "url": "https://robinpedia.robin.bio/zim/files/wikipedia_en_100_mini_2024-06.zim",
+          "region": "NA",
+          "priority": 1
+        }
+      ],
+      "metadata_url": "https://robinpedia.robin.bio/zim/descriptions/wikipedia_en_100_mini_2024-06.md"
+    },
+    {
+      "filename": "wikipedia_en_100_maxi_2024-06.zim",
+      "title": "Wikipedia English Maxi",
+      "description": "Full version of English Wikipedia top 100,000 articles including images and media",
+      "language": "en",
+      "date": "2024-06",
+      "size_bytes": 9876543210,
+      "article_count": 100000,
+      "version": "2024-06",
+      "license": "CC BY-SA 3.0",
+      "source": "Wikipedia",
+      "categories": ["encyclopedia", "english", "complete"],
+      "features": ["text", "images", "media"],
+      "checksum": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "mirrors": [
+        {
+          "url": "https://robinpedia.robin.bio/zim/files/wikipedia_en_100_maxi_2024-06.zim",
+          "region": "NA",
+          "priority": 1
+        }
+      ],
+      "metadata_url": "https://robinpedia.robin.bio/zim/descriptions/wikipedia_en_100_maxi_2024-06.md"
+    }
+  ],
+  "categories": [
+    {
+      "name": "encyclopedia",
+      "description": "General knowledge encyclopedias"
+    },
+    {
+      "name": "english",
+      "description": "English language content"
+    },
+    {
+      "name": "mini",
+      "description": "Compact versions with minimal media"
+    },
+    {
+      "name": "complete",
+      "description": "Full versions including all media"
+    }
+  ],
+  "features": [
+    {
+      "name": "text",
+      "description": "Text content"
+    },
+    {
+      "name": "images",
+      "description": "Image content"
+    },
+    {
+      "name": "media",
+      "description": "Additional media (audio, video, etc.)"
+    },
+    {
+      "name": "minimal_images",
+      "description": "Only essential images included"
+    }
+  ]
+}

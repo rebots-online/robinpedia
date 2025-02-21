@@ -1,0 +1,6 @@
+package world.robinsai.robinpedia
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity: FlutterActivity() {
+}
