@@ -1,28 +1,53 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:collection';
 import 'package:collection/collection.dart';
-import 'package:quiver/cache.dart';
 
-/// ZIM file format parser with memory-efficient reading and caching
+/// Represents a directory entry in the ZIM file
+class DirectoryEntry {
+  final String namespace;
+  final String url;
+  final String title;
+  final int clusterNumber;
+  final int blobNumber;
+  final String mimeType;
+  final List<int>? parameters;
+  final int revision;
+
+  const DirectoryEntry({
+    required this.namespace,
+    required this.url,
+    required this.title,
+    required this.clusterNumber,
+    required this.blobNumber,
+    required this.mimeType,
+    this.parameters,
+    required this.revision,
+  });
+
+  bool get isArticle => namespace == 'A' || namespace == 'C';
+  bool get isRedirect => namespace == 'R';
+  bool get isMetadata => namespace == 'M';
+
+  @override
+  String toString() =>
+      'DirectoryEntry(namespace: $namespace, url: $url, title: $title)';
+}
+
+/// Manages parsing and reading of ZIM format files
 class ZimParser {
   final String filePath;
   late final RandomAccessFile _file;
   late final Map<String, dynamic> _header;
-  final _mimeTypes = <int, String>{};
+  final _mimeTypes = <String>[];
   final _urlIndex = <String, DirectoryEntry>{};
   final _titleIndex = SplayTreeMap<String, DirectoryEntry>();
-
-  // Cache for frequently accessed clusters
-  late final Cache<int, Uint8List> _clusterCache;
 
   static const int HEADER_SIZE = 72;
   static const int MIME_LIST_ITEM_SIZE = 4;
   static const int DIRECTORY_ENTRY_SIZE = 30;
-  static const int CLUSTER_OFFSET_SIZE = 8;
 
-  ZimParser(this.filePath) {
-    _clusterCache = MapCache<int, Uint8List>.lru(maximumSize: 10);
-  }
+  ZimParser(this.filePath);
 
   /// Initialize the parser and read essential structures
   Future<void> initialize() async {
@@ -67,14 +92,12 @@ class ZimParser {
   /// Read MIME type list from the ZIM file
   Future<void> _readMimeTypes() async {
     await _file.setPosition(_header['mimeListPos']);
-    var mimeId = 0;
 
     while (true) {
       final mimeBytes = await _readNullTerminatedString();
       if (mimeBytes.isEmpty) break;
 
-      _mimeTypes[mimeId] = String.fromCharCodes(mimeBytes);
-      mimeId++;
+      _mimeTypes.add(String.fromCharCodes(mimeBytes));
     }
   }
 
@@ -86,7 +109,7 @@ class ZimParser {
     await _file.setPosition(_header['urlPtrPos']);
     final urlPointers = await _readPointers(articleCount);
 
-    // Read directory entries and build URL index
+    // Read directory entries and build indices
     for (var i = 0; i < articleCount; i++) {
       await _file.setPosition(urlPointers[i]);
       final entry = await _readDirectoryEntry();
@@ -114,29 +137,34 @@ class ZimParser {
 
   /// Read a single directory entry from the current file position
   Future<DirectoryEntry?> _readDirectoryEntry() async {
-    final mimeTypeId = await _readByte();
-    if (mimeTypeId < 0) return null;
+    try {
+      final mimeTypeId = await _readByte();
+      if (mimeTypeId < 0 || mimeTypeId >= _mimeTypes.length) return null;
 
-    final parameterLen = await _readByte();
-    final namespace = String.fromCharCode(await _readByte());
-    final revision = await _readInt32();
-    final clusterNumber = await _readInt32();
-    final blobNumber = await _readInt32();
+      final parameterLen = await _readByte();
+      final namespace = String.fromCharCode(await _readByte());
+      final revision = await _readInt32();
+      final clusterNumber = await _readInt32();
+      final blobNumber = await _readInt32();
 
-    final url = await _readNullTerminatedString();
-    final title = await _readNullTerminatedString();
-    final parameters = parameterLen > 0 ? await _file.read(parameterLen) : null;
+      final url = await _readNullTerminatedString();
+      final title = await _readNullTerminatedString();
+      final parameters =
+          parameterLen > 0 ? await _file.read(parameterLen) : null;
 
-    return DirectoryEntry(
-      mimeType: _mimeTypes[mimeTypeId] ?? 'unknown',
-      parameterData: parameters,
-      namespace: namespace,
-      revision: revision,
-      clusterNumber: clusterNumber,
-      blobNumber: blobNumber,
-      url: String.fromCharCodes(url),
-      title: String.fromCharCodes(title),
-    );
+      return DirectoryEntry(
+        mimeType: _mimeTypes[mimeTypeId],
+        namespace: namespace,
+        revision: revision,
+        clusterNumber: clusterNumber,
+        blobNumber: blobNumber,
+        url: String.fromCharCodes(url),
+        title: String.fromCharCodes(title),
+        parameters: parameters,
+      );
+    } catch (e) {
+      throw ZimParserException('Error reading directory entry: $e');
+    }
   }
 
   /// Read a null-terminated string from the current file position
@@ -176,38 +204,16 @@ class ZimParser {
         .toList();
   }
 
+  /// Get article count
+  int get articleCount => _header['articleCount'];
+
+  /// Get cluster count
+  int get clusterCount => _header['clusterCount'];
+
   /// Clean up resources
-  Future<void> dispose() async {
-    _clusterCache.clear();
+  Future<void> close() async {
     await _file.close();
   }
-}
-
-/// Represents a directory entry in the ZIM file
-class DirectoryEntry {
-  final String mimeType;
-  final List<int>? parameterData;
-  final String namespace;
-  final int revision;
-  final int clusterNumber;
-  final int blobNumber;
-  final String url;
-  final String title;
-
-  DirectoryEntry({
-    required this.mimeType,
-    this.parameterData,
-    required this.namespace,
-    required this.revision,
-    required this.clusterNumber,
-    required this.blobNumber,
-    required this.url,
-    required this.title,
-  });
-
-  bool get isArticle => namespace == 'A' || namespace == 'C';
-  bool get isRedirect => namespace == 'R';
-  bool get isMetadata => namespace == 'M';
 }
 
 /// Custom exception for ZIM parser errors
