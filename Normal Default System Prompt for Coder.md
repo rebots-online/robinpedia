@@ -70,7 +70,7 @@ Example: Requesting to search for all .ts files in the current directory
 ## list_files
 Description: Request to list files and directories within the specified directory. If recursive is true, it will list all files and directories recursively. If recursive is false or not provided, it will only list the top-level contents. Do not use this tool to confirm the existence of files you may have created, as the user will let you know if the files were created successfully or not.
 Parameters:
-- path: (required) The path of the directory to list contents for (relative to the current working directory /media/robin/768gbSSD/github/KustomKnavigator)
+- path: (required) The path of the directory to list contents for (relative to the current working directory, which may be outside the home structure, e.g. /media/robin/768gbSSD/github/KustomKnavigator)
 - recursive: (optional) Whether to list files recursively. Use true for recursive listing, false or omit for top-level only.
 Usage:
 <list_files>
@@ -87,8 +87,7 @@ Example: Requesting to list all files in the current directory
 ## list_code_definition_names
 Description: Request to list definition names (classes, functions, methods, etc.) used in source code files at the top level of the specified directory. This tool provides insights into the codebase structure and important constructs, encapsulating high-level concepts and relationships that are crucial for understanding the overall architecture.
 Parameters:
-- path: (required) The path of the directory (relative to the current working directory /media/robin/768gbSSD/github/KustomKnavigator) to list top level source code definitions for.
-Usage:
+- path: (required) The path of the directory to list contents for (relative to the current working directory, which may be outside the home structure, e.g. /media/robin/768gbSSD/github/KustomKnavigator)Usage:
 <list_code_definition_names>
 <path>Directory path here</path>
 </list_code_definition_names>
@@ -101,8 +100,7 @@ Example: Requesting to list all top level source code definitions in the current
 ## write_to_file
 Description: Request to write full content to a file at the specified path. If the file exists, it will be overwritten with the provided content. If the file doesn't exist, it will be created. This tool will automatically create any directories needed to write the file.
 Parameters:
-- path: (required) The path of the file to write to (relative to the current working directory /media/robin/768gbSSD/github/KustomKnavigator)
-- content: (required) The content to write to the file. ALWAYS provide the COMPLETE intended content of the file, without any truncation or omissions. You MUST include ALL parts of the file, even if they haven't been modified. Do NOT include the line numbers in the content though, just the actual content of the file.
+- path: (required) The path of the directory to list contents for (relative to the current working directory, which may be outside the home structure, e.g. /media/robin/768gbSSD/github/KustomKnavigator)- content: (required) The content to write to the file. ALWAYS provide the COMPLETE intended content of the file, without any truncation or omissions. You MUST include ALL parts of the file, even if they haven't been modified. Do NOT include the line numbers in the content though, just the actual content of the file.
 - line_count: (required) The number of lines in the file. Make sure to compute this based on the actual content of the file, not the number of lines in the content you're providing.
 Usage:
 <write_to_file>
@@ -191,8 +189,7 @@ Generate a unified diff that can be cleanly applied to modify code files.
 ```
 
 Parameters:
-- path: (required) File path relative to /media/robin/768gbSSD/github/KustomKnavigator
-- diff: (required) Unified diff content in unified format to apply to the file.
+- path: (required) The path of the directory to list contents for (relative to the current working directory, which may be outside the home structure, e.g. /media/robin/768gbSSD/github/KustomKnavigator)- diff: (required) Unified diff content in unified format to apply to the file.
 
 Usage:
 <apply_diff>
