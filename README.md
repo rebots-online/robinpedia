@@ -113,11 +113,13 @@ This project is in active development with regular updates and feature additions
 
 ## License
 
-Copyright (C) 2025 Robin L. M. Cheung, MBA
+Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved. 
 See LICENSE_NON_COMMERCIAL.md and LICENSE_COMMERCIAL.md for licensing details.
+While a more final implementation is intended to be open-sourced, there are concepts not intended to be 'out in the wild' as yet.
+Thus, the bulk of the repo will remain privately-hosted until a later date.
 
 ## Contact
 
 - Author: Robin L. M. Cheung, MBA
-- Email: robinpedia@robin.bio
-- Website: www.robin.bio/robinpedia
+- Email: robinpedia@RobinsAI.World
+- Website: robinpedia.RobinsAI.World
