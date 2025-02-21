@@ -1,6 +1,7 @@
 # Robinpedia
 
-Copyright(C)2025 Robin L. M. Cheung. All rights reserved.
+Copyright (C)2025 Robin L. M. Cheung. All rights reserved.
+
 NB: While a more final implementation is intended to be open-sourced, there are concepts not intended to be 'out in the wild' as yet.
 Thus, the bulk of the repo will remain privately-hosted until a later date.
 
