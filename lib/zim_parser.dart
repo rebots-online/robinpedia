@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:collection';
-import 'package:collection/collection.dart';
 
 /// Represents a directory entry in the ZIM file
 class DirectoryEntry {

@@ -128,8 +128,8 @@ void main() {
 
 /// Write test cluster data to file for uncompressed cluster
 Future<void> _writeTestCluster(File file, List<List<int>> blobData) async {
-  final headerSize = 1; // Compression flag
-  final blobCountSize = 4;
+  const headerSize = 1; // Compression flag
+  const blobCountSize = 4;
   final offsetSize = 4 * blobData.length;
   final firstBlobOffset = headerSize + blobCountSize + offsetSize;
 
