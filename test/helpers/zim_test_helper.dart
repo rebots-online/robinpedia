@@ -70,8 +70,8 @@ class ZimTestHelper {
   /// Calculate all file positions to ensure proper alignment
   static _FilePositions _calculatePositions() {
     const headerEnd = 72; // Header size
-    final urlPtrPos = headerEnd;
-    final titlePtrPos = urlPtrPos + 16; // 2 entries * 8 bytes
+    const urlPtrPos = headerEnd;
+    const titlePtrPos = urlPtrPos + 16; // 2 entries * 8 bytes
     final clusterPtrPos = titlePtrPos + 16;
     final mimeListPos = clusterPtrPos + 8;
 
