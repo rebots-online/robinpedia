@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:robinpedia/src/zim/compression/lzma_decoder.dart';
 
 /// Compression types used in ZIM files
 enum CompressionType {
@@ -92,7 +93,9 @@ class ClusterManager {
     await _file.setPosition(position);
     final data = size >= 0 ? await _file.read(size) : await _readUntilEnd();
 
-    return _decompressData(Uint8List.fromList(data), cluster.compression);
+    // Convert to Uint8List and decompress based on compression type
+    final compressedData = Uint8List.fromList(data);
+    return await _decompressData(compressedData, cluster.compression);
   }
 
   /// Read data until end of file or error
@@ -155,15 +158,20 @@ class ClusterManager {
   }
 
   /// Decompress data based on compression type
-  Uint8List _decompressData(
+  Future<Uint8List> _decompressData(
       Uint8List compressedData, CompressionType compression) {
-    // TODO: Implement actual decompression
     switch (compression) {
       case CompressionType.none:
-        return compressedData;
+        return Future.value(compressedData);
 
       case CompressionType.lzma2:
-        throw UnimplementedError('LZMA2 decompression not yet implemented');
+        return LzmaDecoder.decompress(compressedData);
+
+      case CompressionType.zlib:
+      case CompressionType.bzip2:
+      case CompressionType.zstd:
+        throw ClusterException(
+            '${compression.name} decompression not yet implemented');
 
       default:
         throw ClusterException('Unsupported compression type: $compression');

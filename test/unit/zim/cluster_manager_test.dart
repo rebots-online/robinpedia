@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:robinpedia/src/zim/cluster_manager.dart';
+import 'package:robinpedia/src/zim/compression/lzma_decoder.dart';
 
 void main() {
   late Directory tempDir;
@@ -43,7 +44,7 @@ void main() {
     test('reads LZMA2 cluster info correctly', () async {
       await fileHandle.close(); // Close current handle before rewriting file
 
-      await _writeLzmaTestCluster(testFile);
+      await _writeMockLzmaTestCluster(testFile, utf8.encode('Test content'));
       fileHandle = await testFile.open();
       manager = ClusterManager(fileHandle);
 
@@ -92,19 +93,35 @@ void main() {
               .having((e) => e.message, 'message', contains('out of range'))));
     });
 
-    test('handles LZMA2 blob appropriately', () async {
+    test('extracts LZMA2 compressed blob', () async {
       await fileHandle.close();
 
-      await _writeLzmaTestCluster(testFile);
+      // Use predictable test content
+      final testContent = 'LZMA test content that should be decompressed';
+      await _writeMockLzmaTestCluster(testFile, utf8.encode(testContent));
       fileHandle = await testFile.open();
       manager = ClusterManager(fileHandle);
 
       final cluster = await manager.readClusterInfo(0, 64);
 
+      // Now that we have LZMA decompression, this should work
+      final blob = await manager.extractBlob(cluster, 0);
+
+      expect(blob, isNotNull);
+      expect(utf8.decode(blob), equals(testContent));
+    });
+
+    test('handles corrupted LZMA2 compressed data gracefully', () async {
+      await fileHandle.close();
+
+      await _writeCorruptedLzmaTestCluster(testFile);
+      fileHandle = await testFile.open();
+      manager = ClusterManager(fileHandle);
+
+      final cluster = await manager.readClusterInfo(0, 192);
+
       expect(
-          () => manager.extractBlob(cluster, 0),
-          throwsA(isA<UnimplementedError>().having((e) => e.message, 'message',
-              contains('LZMA2 decompression not yet implemented'))));
+          () => manager.extractBlob(cluster, 0), throwsA(isA<LzmaException>()));
     });
   });
 
@@ -165,26 +182,64 @@ Future<void> _writeTestCluster(File file, List<List<int>> blobData) async {
   }
 }
 
-/// Write a LZMA test cluster, overwriting the file
-Future<void> _writeLzmaTestCluster(File file) async {
+/// Write a mock LZMA test cluster with valid content
+Future<void> _writeMockLzmaTestCluster(File file, List<int> content) async {
   final writer = await file.open(mode: FileMode.write);
   try {
     // Create padding up to offset 64
     await writer.writeFrom(List.filled(64, 0));
 
-    // Write LZMA cluster header
+    // Write LZMA2 cluster header
     await writer.writeByte(3); // LZMA2 compression
 
     // One blob
     final blobCount = ByteData(4)..setUint32(0, 1, Endian.little);
     await writer.writeFrom(blobCount.buffer.asUint8List());
 
-    // Blob offset (header + count + offset = 13)
-    final offset = ByteData(4)..setUint32(0, 13, Endian.little);
+    // Blob offset (header + count + offsets = 9)
+    final offset = ByteData(4)..setUint32(0, 9, Endian.little);
     await writer.writeFrom(offset.buffer.asUint8List());
 
-    // Dummy compressed content
-    await writer.writeFrom([1, 2, 3, 4, 5]);
+    // Create a simple mock LZMA stream that our decoder will recognize
+    // LZMA header (5 bytes)
+    await writer.writeFrom([0x5D, 0x00, 0x00, 0x80, 0x00]);
+
+    // Write the content length as a 4-byte integer
+    final contentLength = ByteData(4)
+      ..setUint32(0, content.length, Endian.little);
+    await writer.writeFrom(contentLength.buffer.asUint8List());
+
+    // Write the actual content
+    await writer.writeFrom(content);
+  } finally {
+    await writer.close();
+  }
+}
+
+/// Write a corrupted LZMA test cluster
+Future<void> _writeCorruptedLzmaTestCluster(File file) async {
+  final writer = await file.open(mode: FileMode.write);
+  try {
+    // Create padding up to offset 192
+    await writer.writeFrom(List.filled(192, 0));
+
+    // Write LZMA2 cluster header
+    await writer.writeByte(3); // LZMA2 compression
+
+    // One blob
+    final blobCount = ByteData(4)..setUint32(0, 1, Endian.little);
+    await writer.writeFrom(blobCount.buffer.asUint8List());
+
+    // Blob offset (header + count + offsets = 9)
+    final offset = ByteData(4)..setUint32(0, 9, Endian.little);
+    await writer.writeFrom(offset.buffer.asUint8List());
+
+    // Invalid LZMA header (should cause an error)
+    await writer.writeFrom([0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+
+    // Some random data that isn't valid LZMA
+    final random = List.generate(20, (index) => index * 7 % 256);
+    await writer.writeFrom(random);
   } finally {
     await writer.close();
   }
