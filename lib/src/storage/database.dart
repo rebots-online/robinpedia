@@ -8,7 +8,7 @@ part 'database.g.dart';
 
 /// Database tables and queries for the application
 @DriftDatabase(
-  tables: [Articles, ArticleMetadata, SearchIndices, OfflineQueue],
+  tables: [Articles, ArticleMetadata, SearchIndices, OfflineQueue, Annotations],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -72,6 +72,20 @@ class OfflineQueue extends Table {
   TextColumn get payload => text()();
   DateTimeColumn get timestamp => dateTime()();
   BoolColumn get isProcessed => boolean().withDefault(const Constant(false))();
+  
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Stores annotations for articles
+class Annotations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get annotationId => text()();
+  TextColumn get articleId => text().references(Articles, #id)();
+  TextColumn get type => text()(); // text, freehand, image, etc.
+  TextColumn get data => text()(); // JSON serialized annotation data
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
   
   @override
   Set<Column> get primaryKey => {id};
