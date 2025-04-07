@@ -1,5 +1,5 @@
 name: robinpedia
-description: "Your offline knowledge companion"
+description: "Your offline knowledge companion: Galaxy Brain"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -23,6 +23,11 @@ dependencies:
   connectivity_plus: ^5.0.2
   ffi: ^2.1.0        # For native code bindings (will use for LZMA later)
   typed_data: ^1.3.2 # For binary data handling
+  uuid: ^4.3.3      # For generating unique IDs for annotations
+  flutter_animate: ^4.5.0  # For animations in the Galaxy Brain UI
+  flutter_html: ^3.0.0-beta.2  # For rendering HTML content in articles
+  flame: ^1.16.0    # For advanced canvas operations in annotations
+  vector_math: ^2.1.4 # For mathematical operations in the annotation system
 
 dev_dependencies:
   flutter_test:
@@ -41,3 +46,7 @@ dependency_overrides:
 
 flutter:
   uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
