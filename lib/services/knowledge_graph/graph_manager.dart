@@ -1,7 +1,12 @@
 import 'dart:async';
-import 'package:neo4j_dart_driver/neo4j_dart_driver.dart';
+// import 'package:neo4j_dart_driver/neo4j_dart_driver.dart'; // Temporarily disabled
 import '../zim_parser.dart';
 import 'package:uuid/uuid.dart';
+
+// NOTE: Knowledge graph integration is temporarily disabled to focus on the
+// ZIM reader and annotation canvas implementation first. Will be re-enabled
+// in a future phase once core functionality is stable.
+// (C) 2025 Robin L. M. Cheung, MBA
 
 class KnowledgeNode {
   final String id;
@@ -47,7 +52,7 @@ class GraphManager {
   factory GraphManager() => _instance;
   GraphManager._internal();
 
-  late Neo4jDriver _driver;
+  // late Neo4jDriver _driver; // Temporarily disabled
   final _eventController = StreamController<KnowledgeGraphEvent>.broadcast();
   bool _initialized = false;
 
@@ -60,150 +65,130 @@ class GraphManager {
   }) async {
     if (_initialized) return;
 
-    _driver = Neo4jDriver(
-      uri,
-      username: username,
-      password: password,
-    );
+    // Neo4j integration temporarily disabled
+    // _driver = Neo4jDriver(
+    //   uri,
+    //   username: username,
+    //   password: password,
+    // );
 
-    await _createSchema();
+    // await _createSchema();
     _initialized = true;
+    
+    // Notify that we're initialized but in stub mode
+    _eventController.add(KnowledgeGraphEvent(
+      type: EventType.import,
+      data: {'status': 'stub_mode_active'},
+    ));
   }
 
+  // Schema creation is temporarily disabled
   Future<void> _createSchema() async {
-    final session = _driver.session();
-    try {
-      // Create constraints and indexes
-      await session.run('''
-        CREATE CONSTRAINT IF NOT EXISTS FOR (n:Article) REQUIRE n.id IS UNIQUE
-      ''');
-
-      await session.run('''
-        CREATE INDEX IF NOT EXISTS FOR (n:Article) ON (n.title)
-      ''');
-
-      await session.run('''
-        CREATE INDEX IF NOT EXISTS FOR (n:Article) ON (n.timestamp)
-      ''');
-    } finally {
-      await session.close();
-    }
+    // Neo4j integration temporarily disabled
+    // final session = _driver.session();
+    // try {
+    //   // Create constraints and indexes
+    //   await session.run('''
+    //     CREATE CONSTRAINT IF NOT EXISTS FOR (n:Article) REQUIRE n.id IS UNIQUE
+    //   ''');
+    // 
+    //   await session.run('''
+    //     CREATE INDEX IF NOT EXISTS FOR (n:Article) ON (n.title)
+    //   ''');
+    // 
+    //   await session.run('''
+    //     CREATE INDEX IF NOT EXISTS FOR (n:Article) ON (n.timestamp)
+    //   ''');
+    // } finally {
+    //   await session.close();
+    // }
+    return;
   }
 
   Future<void> importFromZim(ZimParser parser) async {
-    final session = _driver.session();
+    // Neo4j integration temporarily disabled
+    // final session = _driver.session();
     try {
       final header = await parser.readHeader();
       
-      // Create batch import query
-      final result = await session.run('''
-        UNWIND \$articles AS article
-        MERGE (a:Article {id: article.id})
-        SET a += article.properties
-        WITH a
-        UNWIND article.links AS link
-        MERGE (b:Article {id: link.targetId})
-        MERGE (a)-[r:LINKS_TO]->(b)
-        SET r.weight = link.weight
-      ''', parameters: {
-        'articles': [] // Populate from ZIM
-      });
+      // Create batch import query - temporarily disabled
+      // final result = await session.run('''
+      //   UNWIND \$articles AS article
+      //   MERGE (a:Article {id: article.id})
+      //   SET a += article.properties
+      //   WITH a
+      //   UNWIND article.links AS link
+      //   MERGE (b:Article {id: link.targetId})
+      //   MERGE (a)-[r:LINKS_TO]->(b)
+      //   SET r.weight = link.weight
+      // ''', parameters: {
+      //   'articles': [] // Populate from ZIM
+      // });
 
+      // Log that we processed articles but in stub mode
       _eventController.add(KnowledgeGraphEvent(
         type: EventType.import,
-        data: {'articleCount': result.summary.counters.nodesCreated},
+        data: {'articleCount': header['articleCount'], 'stub_mode': true},
       ));
     } finally {
-      await session.close();
+      // await session.close();
     }
   }
 
   Future<void> selfHeal() async {
-    final session = _driver.session();
+    // Neo4j integration temporarily disabled
+    // final session = _driver.session();
     try {
-      // Find and repair broken links
-      await session.run('''
-        MATCH (a:Article)-[r:LINKS_TO]->(b:Article)
-        WHERE b.content IS NULL
-        WITH a, b, r
-        CALL apoc.path.spanningTree(a, {
-          relationshipFilter: "LINKS_TO",
-          maxLevel: 2
-        })
-        YIELD path
-        WITH a, b, r, path
-        WHERE length(path) = 2
-        WITH a, b, r, last(nodes(path)) as alternative
-        WHERE alternative <> b AND alternative.content IS NOT NULL
-        SET b.content = alternative.content,
-            b.healedFrom = alternative.id,
-            b.healedTimestamp = datetime()
-        RETURN count(*)
-      ''');
-
-      // Find and merge duplicate nodes
-      await session.run('''
-        MATCH (a:Article), (b:Article)
-        WHERE a.title = b.title AND a <> b
-        WITH a, b
-        ORDER BY a.timestamp, b.timestamp
-        WITH head(collect(a)) as original, tail(collect(a)) as duplicates
-        CALL apoc.refactor.mergeNodes(
-          [original] + duplicates,
-          {properties: "combine"}
-        )
-        YIELD node
-        RETURN count(*)
-      ''');
-
-      // Generate missing relationships based on content similarity
-      await session.run('''
-        MATCH (a:Article), (b:Article)
-        WHERE a <> b
-        AND NOT (a)-[:LINKS_TO]->(b)
-        WITH a, b
-        WHERE apoc.text.sorensenDiceSimilarity(a.content, b.content) > 0.5
-        CREATE (a)-[r:RELATED_TO]->(b)
-        SET r.similarity = apoc.text.sorensenDiceSimilarity(a.content, b.content)
-        RETURN count(*)
-      ''');
-
+      // Self-healing functionality temporarily disabled
+      
+      // Log that self-healing was requested but is in stub mode
+      _eventController.add(KnowledgeGraphEvent(
+        type: EventType.heal,
+        data: {'status': 'stub_mode_active'},
+      ));
+      
     } finally {
-      await session.close();
+      // await session.close();
     }
   }
 
   Future<List<KnowledgeNode>> findRelatedContent(String query) async {
-    final session = _driver.session();
+    // Neo4j integration temporarily disabled
+    // final session = _driver.session();
     try {
-      final result = await session.run('''
-        CALL db.index.fulltext.queryNodes("articleIndex", \$query)
-        YIELD node, score
-        WITH node, score
-        MATCH (node)-[r:LINKS_TO|RELATED_TO*1..2]-(related)
-        WHERE related.content IS NOT NULL
-        RETURN related, score + sum(r.weight) as relevance
-        ORDER BY relevance DESC
-        LIMIT 10
-      ''', parameters: {'query': query});
-
-      return result.map((record) {
-        final node = record.get('related');
-        return KnowledgeNode(
-          id: node['id'],
-          title: node['title'],
-          content: node['content'],
-          metadata: Map<String, dynamic>.from(node),
-          source: 'hybrid',
-        );
-      }).toList();
+      // Temporary stub implementation
+      // Return empty list for now
+      return [];
+      
+      // Neo4j query temporarily disabled
+      // final result = await session.run('''
+      //   CALL db.index.fulltext.queryNodes("articleIndex", \$query)
+      //   YIELD node, score
+      //   WITH node, score
+      //   MATCH (node)-[r:LINKS_TO|RELATED_TO*1..2]-(related)
+      //   WHERE related.content IS NOT NULL
+      //   RETURN related, score + sum(r.weight) as relevance
+      //   ORDER BY relevance DESC
+      //   LIMIT 10
+      // ''', parameters: {'query': query});
+      // 
+      // return result.map((record) {
+      //   final node = record.get('related');
+      //   return KnowledgeNode(
+      //     id: node['id'],
+      //     title: node['title'],
+      //     content: node['content'],
+      //     metadata: Map<String, dynamic>.from(node),
+      //     source: 'hybrid',
+      //   );
+      // }).toList();
     } finally {
-      await session.close();
+      // await session.close();
     }
   }
 
   Future<void> dispose() async {
-    await _driver.close();
+    // await _driver.close(); // Neo4j integration temporarily disabled
     await _eventController.close();
     _initialized = false;
   }
