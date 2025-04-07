@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Copyright (C) 2025 Robin L. M. Cheung, MBA. All rights reserved. -->
+  <style>
+    .primary { fill: #333333; }
+  </style>
+  <rect x="20" y="20" width="160" height="160" rx="15" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="2"/>
+  <circle cx="100" cy="80" r="40" class="primary" />
+  <path d="M60,130 L140,130 C140,150 120,160 100,160 C80,160 60,150 60,130 Z" class="primary" />
+  <circle cx="100" cy="80" r="15" fill="#FFFFFF" />
+  <text x="100" y="180" text-anchor="middle" font-family="Arial" font-size="12">Robinpedia: Galaxy Brain</text>
+</svg>

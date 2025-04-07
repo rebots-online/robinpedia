@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <!-- Copyright (C) 2025 Robin L. M. Cheung, MBA. All rights reserved. -->
+  <rect x="6" y="6" width="36" height="36" rx="4" fill="#FFFFFF" stroke="#E91E63" stroke-width="2"/>
+  <path d="M12,24 C16,16 24,12 30,20 C36,28 30,34 24,36 C18,38 8,32 12,24 Z" fill="none" stroke="#E91E63" stroke-width="2"/>
+</svg>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Copyright (C) 2025 Robin L. M. Cheung, MBA. All rights reserved. -->
+  <style>
+    .primary { fill: #5C6BC0; }
+    .secondary { fill: #8E24AA; }
+    .accent { fill: #FFB300; }
+  </style>
+  <rect x="10" y="10" width="80" height="80" rx="5" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="2"/>
+  
+  <!-- Graph nodes -->
+  <circle cx="30" cy="30" r="8" class="primary"/>
+  <circle cx="70" cy="30" r="8" class="secondary"/>
+  <circle cx="50" cy="50" r="10" class="accent"/>
+  <circle cx="30" cy="70" r="8" class="secondary"/>
+  <circle cx="70" cy="70" r="8" class="primary"/>
+  
+  <!-- Graph edges -->
+  <line x1="30" y1="30" x2="70" y2="30" stroke="#333333" stroke-width="2"/>
+  <line x1="30" y1="30" x2="50" y2="50" stroke="#333333" stroke-width="2"/>
+  <line x1="70" y1="30" x2="50" y2="50" stroke="#333333" stroke-width="2"/>
+  <line x1="30" y1="70" x2="50" y2="50" stroke="#333333" stroke-width="2"/>
+  <line x1="70" y1="70" x2="50" y2="50" stroke="#333333" stroke-width="2"/>
+  <line x1="30" y1="70" x2="70" y2="70" stroke="#333333" stroke-width="2"/>
+  
+  <text x="50" y="90" text-anchor="middle" font-family="Arial" font-size="8">Intelligent Knowledge Web</text>
+</svg>
