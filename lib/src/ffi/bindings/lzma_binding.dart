@@ -12,6 +12,7 @@ import 'package:path/path.dart' as path;
 
 import '../abstract_ffi_binding.dart';
 import '../../utils/memory_manager.dart';
+import 'lzma_typedefs.dart';
 
 /// FFI binding for the LZMA library that handles decompression of LZMA/LZMA2 data
 /// 
@@ -76,108 +77,6 @@ class LZMABinding extends AbstractFFIBinding {
   late final Pointer<NativeFunction<lzma_stream_decoder_func>> _lzmaStreamDecoderPtr;
   late final Pointer<NativeFunction<lzma_end_func>> _lzmaEndPtr;
   
-  /// Native function signatures
-  typedef lzma_code_func = Int32 Function(
-    Pointer<lzma_stream> stream, 
-    Int32 action
-  );
-  
-  typedef lzma_easy_decoder_func = Int32 Function(
-    Pointer<lzma_stream> stream,
-    Uint64 preset,
-    Int32 flags
-  );
-  
-  typedef lzma_stream_decoder_func = Int32 Function(
-    Pointer<lzma_stream> stream,
-    Uint64 memlimit,
-    Int32 flags
-  );
-  
-  typedef lzma_end_func = Void Function(
-    Pointer<lzma_stream> stream
-  );
-  
-  /// Dart function types
-  typedef LzmaCodeFunc = int Function(
-    Pointer<lzma_stream> stream, 
-    int action
-  );
-  
-  typedef LzmaEasyDecoderFunc = int Function(
-    Pointer<lzma_stream> stream,
-    int preset,
-    int flags
-  );
-  
-  typedef LzmaStreamDecoderFunc = int Function(
-    Pointer<lzma_stream> stream,
-    int memlimit,
-    int flags
-  );
-  
-  typedef LzmaEndFunc = void Function(
-    Pointer<lzma_stream> stream
-  );
-  
-  /// LZMA stream structure matching the C structure
-  class lzma_stream extends Struct {
-    external Pointer<Void> next_in;
-    external Uint64 avail_in;
-    external Uint64 total_in;
-    
-    external Pointer<Void> next_out;
-    external Uint64 avail_out;
-    external Uint64 total_out;
-    
-    // Opaque data structures - we don't need to access these directly
-    @Int64()
-    external int internal_1;
-    @Int64()
-    external int internal_2;
-    @Int64()
-    external int internal_3;
-    @Int64()
-    external int internal_4;
-    @Int64()
-    external int internal_5;
-    @Int64()
-    external int internal_6;
-    
-    @Int64()
-    external int reserved_int1;
-    @Int64()
-    external int reserved_int2;
-    @Int64()
-    external int reserved_int3;
-    @Int64()
-    external int reserved_int4;
-    
-    external Pointer<Void> reserved_ptr1;
-    external Pointer<Void> reserved_ptr2;
-    external Pointer<Void> reserved_ptr3;
-    external Pointer<Void> reserved_ptr4;
-  }
-  
-  /// Initialize the binding functions
-  @override
-  bool initialize() {
-    if (!super.initialize()) return false;
-    
-    try {
-      // Look up the required functions
-      _lzmaCodePtr = lookupFunction<lzma_code_func>('lzma_code');
-      _lzmaEasyDecoderPtr = lookupFunction<lzma_easy_decoder_func>('lzma_easy_decoder');
-      _lzmaStreamDecoderPtr = lookupFunction<lzma_stream_decoder_func>('lzma_stream_decoder');
-      _lzmaEndPtr = lookupFunction<lzma_end_func>('lzma_end');
-      
-      return true;
-    } catch (e) {
-      debugPrint('Failed to initialize LZMA functions: $e');
-      return false;
-    }
-  }
-  
   /// Get the Dart function for lzma_code
   LzmaCodeFunc get lzmaCode => _lzmaCodePtr.asFunction<LzmaCodeFunc>();
   
@@ -190,6 +89,41 @@ class LZMABinding extends AbstractFFIBinding {
   /// Get the Dart function for lzma_end
   LzmaEndFunc get lzmaEnd => _lzmaEndPtr.asFunction<LzmaEndFunc>();
   
+  /// Flag to track initialization status
+  bool _initialized = false;
+  
+  /// Check if binding is initialized
+  bool get isInitialized => _initialized;
+
+  /// Initialize the binding functions
+  @override
+  bool initialize() {
+    if (_initialized) return true;
+    
+    try {
+      final lib = super.loadLibrary();
+      
+      // Load function pointers
+      _lzmaCodePtr = lib
+          .lookup<NativeFunction<lzma_code_func>>('lzma_code');
+      
+      _lzmaEasyDecoderPtr = lib
+          .lookup<NativeFunction<lzma_easy_decoder_func>>('lzma_easy_decoder');
+      
+      _lzmaStreamDecoderPtr = lib
+          .lookup<NativeFunction<lzma_stream_decoder_func>>('lzma_stream_decoder');
+      
+      _lzmaEndPtr = lib
+          .lookup<NativeFunction<lzma_end_func>>('lzma_end');
+      
+      _initialized = true;
+      return true;
+    } catch (e) {
+      print('Failed to initialize LZMA binding: $e');
+      return false;
+    }
+  }
+  
   @override
   String getLibraryName() {
     return 'lzma';
@@ -197,116 +131,130 @@ class LZMABinding extends AbstractFFIBinding {
   
   @override
   List<String> getLibrarySearchPaths() {
-    final appDir = path.dirname(Platform.resolvedExecutable);
+    final paths = <String>[];
     
-    // Platform-specific search paths
-    if (Platform.isWindows) {
-      return [
-        appDir,
-        path.join(appDir, 'lib'),
-        'C:\\Program Files\\LZMA\\bin',
-        'C:\\Program Files (x86)\\LZMA\\bin',
-      ];
+    if (Platform.isLinux) {
+      // Common Linux paths
+      paths.addAll([
+        '/usr/lib/liblzma.so',
+        '/usr/lib/x86_64-linux-gnu/liblzma.so',
+        '/usr/lib/aarch64-linux-gnu/liblzma.so',
+        '/lib/liblzma.so',
+      ]);
+    } else if (Platform.isWindows) {
+      // Windows paths
+      paths.addAll([
+        'C:\\Windows\\System32\\liblzma.dll',
+        'liblzma.dll',
+      ]);
     } else if (Platform.isMacOS) {
-      return [
-        appDir,
-        path.join(appDir, 'Frameworks'),
-        '/usr/local/lib',
-        '/opt/homebrew/lib',
-      ];
+      // macOS paths
+      paths.addAll([
+        '/usr/lib/liblzma.dylib',
+        '/usr/local/lib/liblzma.dylib',
+        '/opt/homebrew/lib/liblzma.dylib',
+      ]);
     } else if (Platform.isAndroid) {
-      return [
-        appDir,
-        '/system/lib',
-        '/system/lib64',
-      ];
-    } else {
-      // Linux and others
-      return [
-        appDir,
-        path.join(appDir, 'lib'),
-        '/usr/lib',
-        '/usr/local/lib',
-      ];
+      // Android paths (pulled from NDK)
+      paths.addAll([
+        'liblzma.so',
+        'libliblzma.so',
+      ]);
+    } else if (Platform.isIOS) {
+      // iOS (bundled with app)
+      paths.add('liblzma.framework/liblzma');
     }
+    
+    return paths;
   }
-  
+
   /// Decompress LZMA/LZMA2 data
   /// 
   /// This is a high-level function that handles all the complexity of LZMA decompression.
   /// It supports both small and large data streams and handles memory efficiently.
   Future<Uint8List> decompress(Uint8List compressedData, {int? decompressedSize}) async {
-    // For large data, use asynchronous decompression
-    if (compressedData.length > 1024 * 1024) {
-      return await executeAsync<Uint8List, Uint8List>(
-        param: compressedData,
-        function: (compressedData) => _decompressSync(compressedData, decompressedSize: decompressedSize),
-      );
+    // For small data, use synchronous decompression
+    if (compressedData.length < 10 * 1024 * 1024) { // < 10MB
+      return _decompressSync(compressedData, decompressedSize: decompressedSize);
     }
     
-    // For smaller data, use synchronous decompression
-    return _decompressSync(compressedData, decompressedSize: decompressedSize);
+    // For large data, use compute for background processing
+    return compute(_decompressSync, compressedData);
   }
   
   /// Synchronous decompression implementation
   Uint8List _decompressSync(Uint8List compressedData, {int? decompressedSize}) {
-    if (!initialize()) {
-      throw Exception('LZMA library not loaded: ${getErrorMessage()}');
+    // Check if library is loaded
+    if (!isInitialized) {
+      initialize();
     }
     
     // Allocate a stream structure
     final streamPtr = calloc<lzma_stream>();
     
-    // Initialize stream to zeros
-    for (var i = 0; i < sizeOf<lzma_stream>(); i++) {
-      streamPtr.cast<Uint8>()[i] = 0;
+    // Zero out the struct
+    final bytePtr = streamPtr.cast<Uint8>();
+    final size = sizeOf<lzma_stream>();
+    for (var i = 0; i < size; i++) {
+      bytePtr[i] = 0;
     }
     
     // Input buffer management
-    final inputPtr = malloc<Uint8>(compressedData.length);
+    final inputPtr = calloc<Uint8>(compressedData.length);
     for (var i = 0; i < compressedData.length; i++) {
       inputPtr[i] = compressedData[i];
     }
     
     // Set up input stream
-    streamPtr.ref.next_in = inputPtr.cast();
+    streamPtr.ref.next_in = inputPtr.address;
     streamPtr.ref.avail_in = compressedData.length;
     
     // Output buffer management - start with a reasonable size or use hint
-    final initialOutputSize = decompressedSize ?? (compressedData.length * 4);
-    final outputSize = initialOutputSize > 0 ? initialOutputSize : 4096;
-    final outputPtr = malloc<Uint8>(outputSize);
+    final outputSize = decompressedSize ?? compressedData.length * 2;
+    final outputPtr = calloc<Uint8>(outputSize);
     
     // Set up output stream
-    streamPtr.ref.next_out = outputPtr.cast();
+    streamPtr.ref.next_out = outputPtr.address;
     streamPtr.ref.avail_out = outputSize;
     
     try {
-      // Initialize decoder using either LZMA2 or LZMA based on data format
+      // Initialize decoder
       final ret = lzmaStreamDecoder(
         streamPtr,
-        0xFFFFFFFF, // Unlimited memory
-        LZMA_CONCATENATED
+        0xFFFFFFFF, // Memory limit (max)
+        LZMA_CONCATENATED, // Support concatenated streams
       );
       
       if (ret != LZMA_OK) {
+        malloc.free(inputPtr);
+        malloc.free(outputPtr);
+        malloc.free(streamPtr);
         throw _createLzmaException('Failed to initialize LZMA decoder', ret);
       }
       
-      // Track decompressed data
+      // Decompress
       final chunks = <Uint8List>[];
       var totalDecompressed = 0;
       
-      // Process until end of stream
       while (true) {
         // Run decompression
         final ret = lzmaCode(streamPtr, LZMA_FINISH);
         
-        // Calculate how much data was produced
+        // Handle errors
+        if (ret != LZMA_OK && ret != LZMA_STREAM_END) {
+          // Clean up
+          lzmaEnd(streamPtr);
+          malloc.free(inputPtr);
+          malloc.free(outputPtr);
+          malloc.free(streamPtr);
+          throw _createLzmaException('LZMA decompression error', ret);
+        }
+        
+        // Check for output data
         final decompressedBytes = outputSize - streamPtr.ref.avail_out;
         if (decompressedBytes > 0) {
           // Copy to new list and add to chunks
-          final decompressedChunk = Uint8List(decompressedBytes);
+          final decompressedChunk = Uint8List(decompressedBytes.toInt());
           for (var i = 0; i < decompressedBytes; i++) {
             decompressedChunk[i] = outputPtr[i];
           }
@@ -314,21 +262,24 @@ class LZMABinding extends AbstractFFIBinding {
           totalDecompressed += decompressedBytes;
           
           // Reset output buffer
-          streamPtr.ref.next_out = outputPtr.cast();
+          streamPtr.ref.next_out = outputPtr.address;
           streamPtr.ref.avail_out = outputSize;
         }
         
-        // Check termination conditions
-        if (ret == LZMA_STREAM_END) {
-          break; // Decompression complete
-        }
+        // Exit if end of stream or no more input
+        if (ret == LZMA_STREAM_END) break;
         
-        if (ret != LZMA_OK) {
-          throw _createLzmaException('LZMA decompression error', ret);
+        // Sanity check for infinite loop
+        if (decompressedBytes == 0 && ret != LZMA_STREAM_END) {
+          throw Exception('LZMA decompression stalled');
         }
       }
       
-      // Combine all chunks into one buffer
+      // Combine chunks
+      if (chunks.length == 1) {
+        return chunks.first;
+      }
+      
       final result = Uint8List(totalDecompressed);
       var offset = 0;
       for (final chunk in chunks) {
@@ -348,23 +299,26 @@ class LZMABinding extends AbstractFFIBinding {
   
   /// Stream-based decompression for very large files
   Stream<Uint8List> decompressStream(Stream<Uint8List> compressedStream, {int? decompressedSize}) async* {
-    if (!initialize()) {
-      throw Exception('LZMA library not loaded: ${getErrorMessage()}');
+    // Check if library is loaded
+    if (!isInitialized) {
+      initialize();
     }
     
     // Allocate a stream structure
     final streamPtr = calloc<lzma_stream>();
     
-    // Initialize stream to zeros
-    for (var i = 0; i < sizeOf<lzma_stream>(); i++) {
-      streamPtr.cast<Uint8>()[i] = 0;
+    // Zero out the struct
+    final bytePtr = streamPtr.cast<Uint8>();
+    final size = sizeOf<lzma_stream>();
+    for (var i = 0; i < size; i++) {
+      bytePtr[i] = 0;
     }
     
     // Initialize decoder
     final ret = lzmaStreamDecoder(
       streamPtr,
-      0xFFFFFFFF, // Unlimited memory
-      LZMA_CONCATENATED
+      0xFFFFFFFF, // Memory limit (max)
+      LZMA_CONCATENATED, // Support concatenated streams
     );
     
     if (ret != LZMA_OK) {
@@ -374,25 +328,25 @@ class LZMABinding extends AbstractFFIBinding {
     
     // Output buffer management
     final outputSize = 64 * 1024; // 64KB chunks
-    final outputPtr = malloc<Uint8>(outputSize);
+    final outputPtr = calloc<Uint8>(outputSize);
     
     try {
       // Process input stream
       await for (final chunk in compressedStream) {
         // Get pointer to input data
-        final inputPtr = malloc<Uint8>(chunk.length);
+        final inputPtr = calloc<Uint8>(chunk.length);
         for (var i = 0; i < chunk.length; i++) {
           inputPtr[i] = chunk[i];
         }
         
         // Set up input stream
-        streamPtr.ref.next_in = inputPtr.cast();
+        streamPtr.ref.next_in = inputPtr.address;
         streamPtr.ref.avail_in = chunk.length;
         
         // Process this chunk
         while (streamPtr.ref.avail_in > 0) {
           // Reset output buffer
-          streamPtr.ref.next_out = outputPtr.cast();
+          streamPtr.ref.next_out = outputPtr.address;
           streamPtr.ref.avail_out = outputSize;
           
           // Run decompression
@@ -408,7 +362,7 @@ class LZMABinding extends AbstractFFIBinding {
           final decompressedBytes = outputSize - streamPtr.ref.avail_out;
           if (decompressedBytes > 0) {
             // Copy to new list and yield
-            final decompressedChunk = Uint8List(decompressedBytes);
+            final decompressedChunk = Uint8List(decompressedBytes.toInt());
             for (var i = 0; i < decompressedBytes; i++) {
               decompressedChunk[i] = outputPtr[i];
             }
@@ -426,7 +380,7 @@ class LZMABinding extends AbstractFFIBinding {
       // Finish any remaining data
       while (true) {
         // Reset output buffer
-        streamPtr.ref.next_out = outputPtr.cast();
+        streamPtr.ref.next_out = outputPtr.address;
         streamPtr.ref.avail_out = outputSize;
         
         // Run decompression
@@ -436,7 +390,7 @@ class LZMABinding extends AbstractFFIBinding {
         final decompressedBytes = outputSize - streamPtr.ref.avail_out;
         if (decompressedBytes > 0) {
           // Copy to new list and yield
-          final decompressedChunk = Uint8List(decompressedBytes);
+          final decompressedChunk = Uint8List(decompressedBytes.toInt());
           for (var i = 0; i < decompressedBytes; i++) {
             decompressedChunk[i] = outputPtr[i];
           }
@@ -482,5 +436,31 @@ class LZMABinding extends AbstractFFIBinding {
     };
     
     return Exception('$message: $errorMessage (code $errorCode)');
+  }
+}
+
+/// Specialized buffer manager for compression operations
+class CompressionBufferManager {
+  /// Constructor
+  CompressionBufferManager();
+  
+  /// Allocate an input buffer
+  Pointer<Uint8> allocateInputBuffer(int size) {
+    return calloc<Uint8>(size);
+  }
+  
+  /// Release an input buffer
+  void releaseInputBuffer(Pointer<Uint8> buffer) {
+    malloc.free(buffer);
+  }
+  
+  /// Allocate an output buffer
+  Pointer<Uint8> allocateOutputBuffer(int size) {
+    return calloc<Uint8>(size);
+  }
+  
+  /// Release an output buffer
+  void releaseOutputBuffer(Pointer<Uint8> buffer) {
+    malloc.free(buffer);
   }
 }

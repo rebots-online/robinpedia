@@ -23,8 +23,8 @@ class LzmaDecompressionService {
   /// Factory constructor for singleton pattern
   factory LzmaDecompressionService() => _instance;
   
-  /// Internal constructor for singleton pattern
-  LzmaDecompressionService._internal();
+  /// Private constructor for singleton pattern
+  LzmaDecompressionService._internal() : _cacheSizeLimit = 100 * 1024 * 1024; // Default 100MB cache limit
   
   /// The LZMA binding
   final LZMABinding _lzmaBinding = LZMABinding();
@@ -88,11 +88,9 @@ class LzmaDecompressionService {
         return false;
       }
       
-      // Initialize the binding
+      // Check if LZMA binding is initialized
       if (!_lzmaBinding.initialize()) {
-        _initializationFailed = true;
-        _initializationError = 'Failed to initialize LZMA binding: ${_lzmaBinding.getErrorMessage()}';
-        return false;
+        throw Exception('Failed to initialize LZMA binding');
       }
       
       _isInitialized = true;

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' show min;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
