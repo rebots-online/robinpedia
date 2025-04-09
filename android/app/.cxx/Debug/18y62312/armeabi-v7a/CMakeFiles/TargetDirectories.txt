@@ -1,0 +1,2 @@
+/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/18y62312/armeabi-v7a/CMakeFiles/edit_cache.dir
+/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/18y62312/armeabi-v7a/CMakeFiles/rebuild_cache.dir

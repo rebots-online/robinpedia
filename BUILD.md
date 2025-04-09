@@ -11,6 +11,7 @@ This document outlines the build and deployment process for the Robinpedia dev b
 ### Prerequisites
 
 - Flutter SDK 3.19+ with Dart 3.3+
+- Java 17 (OpenJDK 17) - Required for Android builds
 - Android SDK with latest platform tools
 - ADB configured for wireless debugging
 - CMake for native code compilation
@@ -160,6 +161,8 @@ Common issues and solutions:
    - Run `flutter clean` before rebuilding
    - Ensure all native dependencies are installed
    - Check for platform-specific issues in android/ios directories
+   - Verify Java 17 is being used (not Java 21): `java -version`
+   - If using Neo4j, use the non-desktop version to avoid Java version conflicts
 
 3. **Performance Issues**
    - Enable ROBINPEDIA_METRICS to collect diagnostic data

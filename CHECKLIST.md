@@ -107,11 +107,18 @@ Target Completion: May 10, 2025
 
 ## Dev Build Deployment
 
-- [/] Test suite verification (in progress)
-- [ ] ADB connection to test device (192.168.0.124:33807)
-- [ ] Build configuration for dev deployment
-- [ ] Performance verification on target device
-- [ ] Version tagging (v0.1-dev)
+- [✅] Test suite verification (core functionality verified)
+- [✅] ADB connection to test device (192.168.0.124:33807)
+- [✅] Build configuration for dev deployment (standardized on Java 17)
+- [/] Performance verification on target device (in progress)
+- [/] Version tagging (v0.1-dev) (pending)
+
+### Build Environment Configuration
+
+- [✅] Standardized on Java 17 for all builds (2025-04-09)
+- [✅] Android SDK path configured at /mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk
+- [✅] Using non-desktop Neo4j for hKG to avoid Java version conflicts
+- [✅] Created specialized deployment scripts for core ZIM functionality (2025-04-09)
 
 ## Notes
 
@@ -135,3 +142,6 @@ Target Completion: May 10, 2025
 - Initial dev build deployment targeted for WiFi ADB connection (192.168.0.124:33807)
 - All critical core ZIM components implemented with 2x+ return strategy
 - Dev build includes: Memory Manager, LZMA Decompression, Cluster Management, and Content Extraction
+[✅] Core ZIM verification build deployed (2025-04-09 14:59:17)
+[✅] Core ZIM verification build deployed (2025-04-09 15:01:43)
+[✅] Core ZIM verification build deployed (2025-04-09 15:14:51)

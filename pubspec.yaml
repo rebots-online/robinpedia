@@ -28,6 +28,7 @@ dependencies:
   flutter_html: ^3.0.0-beta.2  # For rendering HTML content in articles
   flame: ^1.16.0    # For advanced canvas operations in annotations
   vector_math: ^2.1.4 # For mathematical operations in the annotation system
+  file_picker: ^6.2.0  # For selecting ZIM files in the debug interface
 
 dev_dependencies:
   flutter_test:
