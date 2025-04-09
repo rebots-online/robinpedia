@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'dart:async';
 import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 
 /// LZMA stream structure for FFI
 final class _LzmaStream extends ffi.Struct {
@@ -61,6 +62,42 @@ class LzmaDecoder {
       return _decompressInIsolate(compressedData);
     } else {
       return _decompressSync(compressedData);
+    }
+  }
+  
+  /// Stream-based decompression for progressive handling of large data
+  /// 
+  /// This method allows processing compressed data as a stream, enabling
+  /// progressive loading and rendering of article content without waiting
+  /// for the entire decompression to complete.
+  static Stream<Uint8List> decompressStream(
+      Uint8List compressedData, {int chunkSize = 65536}) async* {
+    if (compressedData.isEmpty) {
+      yield Uint8List(0);
+      return;
+    }
+    
+    // For very small data, just decompress in one go
+    if (compressedData.length < chunkSize) {
+      yield await decompress(compressedData);
+      return;
+    }
+    
+    // Use streaming decompression for large data
+    final native = _LzmaNative();
+    try {
+      native._loadLibrary();
+      native._initFunctions();
+      
+      // Create and initialize stream
+      final stream = native._createStream();
+      final result = native._initDecoder(stream);
+      
+      // Use chunked processing
+      yield* native._processCompressedDataStreaming(
+          stream, compressedData, chunkSize);
+    } finally {
+      native._closeLibrary();
     }
   }
 
@@ -285,6 +322,77 @@ class _LzmaNative {
       }
 
       return result;
+    } finally {
+      // Clean up
+      _freeResources(stream, inBuffer, outBuffer);
+    }
+  }
+  
+  /// Process compressed data as a stream for progressive decompression
+  /// 
+  /// This method allows for decompressing data in chunks to enable progressive
+  /// loading and processing of large compressed content.
+  Stream<Uint8List> _processCompressedDataStreaming(
+      ffi.Pointer<_LzmaStream> stream,
+      Uint8List compressedData,
+      int chunkSize) async* {
+    final code =
+        _lzmaCode.asFunction<int Function(ffi.Pointer<ffi.Void>, int)>();
+
+    // Allocate buffers
+    final inBuffer = _allocateBuffer(compressedData);
+    final outBuffer = _allocateEmptyBuffer(chunkSize);
+
+    try {
+      // Set up input/output buffers
+      stream.ref.next_in = inBuffer;
+      stream.ref.avail_in = compressedData.length;
+      stream.ref.next_out = outBuffer;
+      stream.ref.avail_out = chunkSize;
+
+      var status = LzmaDecoder._LZMA_OK;
+      bool isFirstChunk = true;
+      
+      while (status != LzmaDecoder._LZMA_STREAM_END) {
+        // If this is not the first chunk, we may need to yield control to allow UI updates
+        if (!isFirstChunk) {
+          await Future.delayed(Duration.zero); // Yield control
+        } else {
+          isFirstChunk = false;
+        }
+
+        status = code(stream.cast<ffi.Void>(), LzmaDecoder._LZMA_FINISH);
+
+        if (status != LzmaDecoder._LZMA_OK &&
+            status != LzmaDecoder._LZMA_STREAM_END) {
+          LzmaDecoder._handleLzmaError(status);
+        }
+
+        // Calculate how much output was produced
+        final bytesProcessed = chunkSize - stream.ref.avail_out;
+        if (bytesProcessed > 0) {
+          // Copy current output buffer and yield it
+          final outData = Uint8List(bytesProcessed);
+          for (var i = 0; i < bytesProcessed; i++) {
+            outData[i] = outBuffer[i];
+          }
+          
+          yield outData;
+
+          // Reset output buffer
+          if (stream.ref.avail_in > 0 || status != LzmaDecoder._LZMA_STREAM_END) {
+            stream.ref.next_out = outBuffer;
+            stream.ref.avail_out = chunkSize;
+          }
+        }
+
+        // If we've consumed all input but haven't reached STREAM_END,
+        // we might have a concatenated stream
+        if (stream.ref.avail_in == 0 &&
+            status != LzmaDecoder._LZMA_STREAM_END) {
+          break;
+        }
+      }
     } finally {
       // Clean up
       _freeResources(stream, inBuffer, outBuffer);
