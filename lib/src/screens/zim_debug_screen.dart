@@ -8,7 +8,10 @@ import '../zim/zim_entry.dart';
 import '../utils/memory_manager.dart';
 
 class ZimDebugScreen extends StatefulWidget {
-  const ZimDebugScreen({super.key});
+  /// Optional initial ZIM file path to load on startup
+  final String? initialZimPath;
+  
+  const ZimDebugScreen({super.key, this.initialZimPath});
 
   @override
   State<ZimDebugScreen> createState() => _ZimDebugScreenState();
@@ -27,8 +30,18 @@ class _ZimDebugScreenState extends State<ZimDebugScreen> {
   final MemoryManager memoryManager = MemoryManager();
   
   @override
+  void initState() {
+    super.initState();
+    // Load initial ZIM file if provided
+    if (widget.initialZimPath != null) {
+      Future.microtask(() => loadZimFile(widget.initialZimPath!));
+    }
+  }
+
+  @override
   void dispose() {
     memoryManager.dispose();
+    zimReader?.dispose();
     super.dispose();
   }
 

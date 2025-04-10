@@ -183,6 +183,23 @@ The app supports the following Android architectures:
 
 - **Branching Strategy**: We will use a simplified version of [Gitflow](https://datasift.github.io/gitflow/IntroducingGitFlow.html), with `main` representing the production-ready code and feature branches for new development.
 
+## Documentation Naming Conventions
+
+### Checklist Files
+- Format: `CHECKLIST-[PrimaryFocus]-[SecondaryFocus]-[date]-[time].md`
+- Example: `CHECKLIST-CoreZIMReader-DevBuildFunctionality-9apr2025-21h33.md`
+- Guidelines:
+  - `PrimaryFocus`: The main component or feature being addressed (e.g., CoreZIMReader, AnnotationSystem)
+  - `SecondaryFocus`: The specific aspect or goal (e.g., DevBuildFunctionality, PerformanceOptimization)
+  - Always include date (ddMONyyyy format) and time (24h format)
+  - Use descriptive names that clearly communicate the purpose without needing to open the file
+
+### Other Documentation Files
+- Architecture documents: `ARCHITECTURE-[Component].md`
+- Design documents: `DESIGN-[Feature]-[date].md`
+- Standard Operating Procedures: `SOP-[Process].md`
+- Meeting notes: `MEETING-[Topic]-[date].md`
+
 ## Deviations from All-Project SOPs
 
 - *Currently, there are no deviations from the all-project SOPs.*

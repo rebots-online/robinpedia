@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'zim_debug_screen.dart';
+import 'zim_download_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -33,6 +34,22 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.cloud_download),
+                label: const Text('Download ZIM Files'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ZimDownloadScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                ),
               ),
             ],
           ),
