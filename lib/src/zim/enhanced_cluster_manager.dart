@@ -5,13 +5,111 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' show min;
-import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
-import 'package:collection/collection.dart';
+import 'dart:math';
+// For StreamQueue
+// For listEquals
+import 'package:flutter/foundation.dart'; // For compute, kIsWeb
+// For StreamQueue
+// For listEquals
+// For compute, kIsWeb
+// For path joining
 
 import 'lzma_decompression.dart';
 import '../utils/memory_manager.dart';
+
+/// Error codes for cluster operations
+enum ClusterErrorCode {
+  /// The cluster number is out of range
+  outOfRange,
+  
+  /// The cluster has an invalid size
+  invalidSize,
+  
+  /// Failed to read cluster data from file
+  readFailure,
+  
+  /// The decompression service is not available
+  decompressionUnavailable,
+  
+  /// Decompression failed
+  decompressionFailure,
+  
+  /// The compression type is not supported
+  unsupportedCompression,
+  
+  /// The compression type is unknown
+  unknownCompression,
+  
+  /// The cluster is not in the cache
+  cacheNotFound,
+  
+  /// Unknown error
+  unknown,
+}
+
+/// Exception thrown when an error occurs during cluster operations
+class ClusterException implements Exception {
+  /// The error message
+  final String message;
+  
+  /// The cluster number that caused the error
+  final int clusterNumber;
+  
+  /// The error code
+  final ClusterErrorCode errorCode;
+  
+  /// The inner exception that caused this exception
+  final dynamic innerException;
+  
+  /// The stack trace of the inner exception
+  final StackTrace? stackTrace;
+  
+  /// Additional data related to the error
+  final Map<String, dynamic>? additionalData;
+  
+  /// Constructor
+  ClusterException(
+    this.message, {
+    required this.clusterNumber,
+    required this.errorCode,
+    this.innerException,
+    this.stackTrace,
+    this.additionalData,
+  });
+  
+  @override
+  String toString() {
+    return 'ClusterException: $message (Cluster: $clusterNumber, Code: $errorCode)';
+  }
+  
+  /// Get a detailed error report for debugging
+  String getDetailedReport() {
+    final buffer = StringBuffer();
+    buffer.writeln('--- Cluster Exception Report ---');
+    buffer.writeln('Message: $message');
+    buffer.writeln('Cluster Number: $clusterNumber');
+    buffer.writeln('Error Code: $errorCode');
+    
+    if (innerException != null) {
+      buffer.writeln('Inner Exception: $innerException');
+    }
+    
+    if (additionalData != null && additionalData!.isNotEmpty) {
+      buffer.writeln('Additional Data:');
+      additionalData!.forEach((key, value) {
+        buffer.writeln('  $key: $value');
+      });
+    }
+    
+    if (stackTrace != null) {
+      buffer.writeln('Stack Trace:');
+      buffer.writeln(stackTrace.toString());
+    }
+    
+    return buffer.toString();
+  }
+}
 
 /// Enhanced cluster manager for efficient ZIM file cluster access and caching
 /// 
@@ -36,14 +134,23 @@ class EnhancedClusterManager {
   /// LRU cache for clusters
   final LinkedHashMap<int, Cluster> _clusterCache = LinkedHashMap();
   
-  /// Prefetch queue for anticipated accesses
-  final Queue<int> _prefetchQueue = Queue();
+  /// Active prefetch queue
+  final _prefetchQueue = Queue<int>();
+  
+  /// Receive port for messages from the prefetch isolate
+  ReceivePort? _prefetchReceivePort;
   
   /// Completer map for concurrent access coordination
   final Map<int, Completer<Cluster>> _ongoingReads = {};
   
   /// Prefetching isolate
   Isolate? _prefetchIsolate;
+
+  /// Maximum cache size in bytes (e.g., 128 MB)
+  static const int _maxCacheMemoryBytes = 128 * 1024 * 1024;
+
+  /// Current total size of clusters in the cache
+  int _currentCacheMemoryBytes = 0;
   
   /// Prefetcher send port
   SendPort? _prefetchSendPort;
@@ -158,47 +265,162 @@ class EnhancedClusterManager {
   }
   
   /// Read a cluster from file (static version for isolate)
+  /// 
+  /// This method reads a cluster from the ZIM file and decompresses it if necessary.
+  /// It supports multiple compression types and uses optimized decompression with size hints
+  /// when available.
+  /// 
+  /// Compression types in ZIM files:
+  /// - 0: No compression
+  /// - 1: Zlib compression
+  /// - 4: LZMA2 compression
+  /// - 5: Zstandard compression (in newer ZIM files)
   static Future<Cluster> _readClusterFromFile(
     RandomAccessFile file,
     int clusterNumber,
     List<int> clusterOffsets,
     LzmaDecompressionService decompressionService,
   ) async {
-    // Validate cluster number
-    if (clusterNumber < 0 || clusterNumber >= clusterOffsets.length - 1) {
-      throw RangeError('Cluster number out of range: $clusterNumber');
-    }
+    Stopwatch timer = Stopwatch()..start();
     
-    // Get cluster range in file
-    final clusterStart = clusterOffsets[clusterNumber];
-    final clusterEnd = clusterOffsets[clusterNumber + 1];
-    final clusterSize = clusterEnd - clusterStart;
-    
-    // Read cluster data
-    file.setPositionSync(clusterStart);
-    final compressedData = file.readSync(clusterSize);
-    
-    // Check compression flag
-    final compressionFlag = compressedData[0];
-    final isCompressed = compressionFlag == 4; // 4 = LZMA2
-    
-    Uint8List data;
-    if (isCompressed) {
-      // Extract the actual compressed data (skip compression flag)
-      final compressedContent = Uint8List.sublistView(compressedData, 1);
+    try {
+      // Validate cluster number
+      if (clusterNumber < 0 || clusterNumber >= clusterOffsets.length - 1) {
+        throw RangeError('Cluster number out of range: $clusterNumber');
+      }
       
-      // Decompress
-      data = await decompressionService.decompress(compressedContent);
-    } else {
-      // Uncompressed, just return the data (skip compression flag)
-      data = Uint8List.sublistView(compressedData, 1);
+      // Get cluster range in file
+      final clusterStart = clusterOffsets[clusterNumber];
+      final clusterEnd = clusterOffsets[clusterNumber + 1];
+      final clusterSize = clusterEnd - clusterStart;
+      
+      // Safety check for valid cluster size
+      if (clusterSize <= 0) {
+        throw ClusterException(
+          'Invalid cluster size: $clusterSize for cluster $clusterNumber',
+          clusterNumber: clusterNumber,
+          errorCode: ClusterErrorCode.invalidSize,
+        );
+      }
+      
+      // Read cluster data
+      await file.setPosition(clusterStart);
+      final compressedData = await file.read(clusterSize);
+      
+      if (compressedData.isEmpty) {
+        throw ClusterException(
+          'Failed to read cluster data for cluster $clusterNumber',
+          clusterNumber: clusterNumber,
+          errorCode: ClusterErrorCode.readFailure,
+        );
+      }
+      
+      debugPrint('Cluster $clusterNumber read in ${timer.elapsedMilliseconds}ms. '  
+          'Size: ${compressedData.length} bytes');
+      
+      // Check compression flag (first byte indicates compression type)
+      final compressionFlag = compressedData[0];
+      
+      // Extract the actual data (skip compression flag)
+      final contentData = Uint8List.sublistView(compressedData, 1);
+      
+      Uint8List data;
+      switch (compressionFlag) {
+        case 0: // No compression
+          // No decompression needed
+          data = contentData;
+          debugPrint('Cluster $clusterNumber is uncompressed, size: ${data.length} bytes');
+          break;
+          
+        case 4: // LZMA2 compression
+          // Ensure decompression service is initialized
+          if (!await decompressionService.isLzmaAvailable()) {
+            throw ClusterException(
+              'LZMA decompression is not available',
+              clusterNumber: clusterNumber,
+              errorCode: ClusterErrorCode.decompressionUnavailable,
+            );
+          }
+          
+          debugPrint('Starting LZMA2 decompression of cluster $clusterNumber, '  
+              'compressed size: ${contentData.length} bytes');
+          
+          try {
+            // Calculate an estimated decompressed size (LZMA typically achieves 3-4x compression)
+            // This is just a heuristic for optimization; the actual size will be determined during decompression
+            final estimatedSize = contentData.length * 4;
+            
+            // Use optimized decompression with size hint for better performance
+            timer.reset();
+            data = await decompressionService.decompressWithSizeHint(
+              contentData,
+              estimatedSize,
+            );
+            
+            final decompressTime = timer.elapsedMilliseconds;
+            final compressionRatio = data.length / contentData.length;
+            
+            debugPrint('LZMA2 decompression of cluster $clusterNumber completed in ${decompressTime}ms. '
+                'Decompressed size: ${data.length} bytes, ratio: ${compressionRatio.toStringAsFixed(2)}x');
+          } catch (decompressError) {
+            throw ClusterException(
+              'LZMA2 decompression failed: $decompressError',
+              clusterNumber: clusterNumber,
+              errorCode: ClusterErrorCode.decompressionFailure,
+              innerException: decompressError,
+            );
+          }
+          break;
+          
+        case 1: // Zlib compression
+          debugPrint('Zlib compressed cluster detected: $clusterNumber');
+          // TODO: Implement Zlib decompression using Flutter's built-in zlib decoder
+          throw ClusterException(
+            'Zlib decompression not yet implemented for cluster $clusterNumber',
+            clusterNumber: clusterNumber,
+            errorCode: ClusterErrorCode.unsupportedCompression,
+          );
+          
+        case 5: // Zstandard compression
+          debugPrint('Zstandard compressed cluster detected: $clusterNumber');
+          // TODO: Implement Zstandard decompression
+          throw ClusterException(
+            'Zstandard decompression not yet implemented for cluster $clusterNumber',
+            clusterNumber: clusterNumber,
+            errorCode: ClusterErrorCode.unsupportedCompression,
+          );
+          
+        default:
+          throw ClusterException(
+            'Unknown compression type: $compressionFlag for cluster $clusterNumber',
+            clusterNumber: clusterNumber,
+            errorCode: ClusterErrorCode.unknownCompression,
+            additionalData: {'compressionFlag': compressionFlag},
+          );
+      }
+      
+      return Cluster(
+        number: clusterNumber,
+        data: data,
+        compressionFlag: compressionFlag,
+      );
+    } catch (e, stackTrace) {
+      // Don't wrap ClusterException instances to preserve error code and details
+      if (e is ClusterException) {
+        rethrow;
+      }
+      
+      // Wrap other errors with detailed information for easier debugging
+      throw ClusterException(
+        'Error reading cluster $clusterNumber: ${e.toString()}',
+        clusterNumber: clusterNumber,
+        errorCode: ClusterErrorCode.unknown,
+        innerException: e,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      timer.stop();
     }
-    
-    return Cluster(
-      number: clusterNumber,
-      data: data,
-      compressionFlag: compressionFlag,
-    );
   }
   
   /// Get a cluster by number
@@ -296,17 +518,31 @@ class EnhancedClusterManager {
     return Uint8List.sublistView(cluster.data, offset, offset + length);
   }
   
-  /// Add a cluster to the cache
+  /// Add a cluster to the cache with memory-aware eviction
   void _addToCache(int clusterNumber, Cluster cluster) {
-    // Add to cache
-    _clusterCache[clusterNumber] = cluster;
-    
-    // Trim cache if needed
-    while (_clusterCache.length > _maxCacheSize) {
-      // Remove oldest entry (first in LinkedHashMap)
-      final oldest = _clusterCache.entries.first;
-      _clusterCache.remove(oldest.key);
+    // If cluster already exists, remove it first to update its position and size
+    if (_clusterCache.containsKey(clusterNumber)) {
+      final existingCluster = _clusterCache.remove(clusterNumber)!;
+      _currentCacheMemoryBytes -= existingCluster.data.lengthInBytes;
     }
+
+    // Add new cluster to cache (moves to end of LinkedHashMap)
+    _clusterCache[clusterNumber] = cluster;
+    final clusterSize = cluster.data.lengthInBytes;
+    _currentCacheMemoryBytes += clusterSize;
+
+    // Evict oldest entries if cache exceeds memory limit
+    while (_currentCacheMemoryBytes > _maxCacheMemoryBytes && _clusterCache.isNotEmpty) {
+      // Remove oldest entry (first in LinkedHashMap)
+      final oldestEntry = _clusterCache.entries.first;
+      final removedCluster = _clusterCache.remove(oldestEntry.key);
+      if (removedCluster != null) {
+        _currentCacheMemoryBytes -= removedCluster.data.lengthInBytes;
+      }
+    }
+    
+    // Safety check: ensure memory usage is non-negative
+    _currentCacheMemoryBytes = _currentCacheMemoryBytes.clamp(0, _maxCacheMemoryBytes * 2); // Allow temporary overshoot
   }
   
   /// Schedule prefetching of likely next clusters
@@ -334,7 +570,7 @@ class EnhancedClusterManager {
     if (_prefetchQueue.isEmpty || _prefetchSendPort == null) return;
     
     // Limit concurrent prefetches to 2
-    final maxConcurrentPrefetches = 2;
+    const maxConcurrentPrefetches = 2;
     final prefetchCount = min(maxConcurrentPrefetches, _prefetchQueue.length);
     
     for (var i = 0; i < prefetchCount; i++) {

@@ -1,11 +1,13 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../zim/zim_reader.dart';
 import '../zim/zim_entry.dart';
 import '../utils/memory_manager.dart';
+import '../utils/html_sanitizer.dart';
 
 /// Screen for reading and navigating ZIM file content
 class ZimReaderScreen extends StatefulWidget {
@@ -19,27 +21,38 @@ class ZimReaderScreen extends StatefulWidget {
 }
 
 class _ZimReaderScreenState extends State<ZimReaderScreen> {
+  // Core components
   late final MemoryManager _memoryManager;
   ZimReader? _zimReader;
+  late final HtmlSanitizer _htmlSanitizer;
+  
+  // UI state
   bool _isLoading = true;
+  bool _isInitialized = false;
   String _errorMessage = '';
+  String? _loadingMessage;
   
   // Navigation state
   List<ZimEntry> _currentEntries = [];
   ZimEntry? _currentEntry;
   String? _currentContent;
+  String? _sanitizedContent;
   int _totalEntries = 0;
   int _currentPage = 0;
-  int _entriesPerPage = 20;
+  final int _entriesPerPage = 20;
+  final List<ZimEntry> _navigationHistory = [];
   
   // Search state
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  String? _lastSearchQuery;
+  final List<ZimEntry> _searchResults = [];
   
   @override
   void initState() {
     super.initState();
     _memoryManager = MemoryManager();
+    _htmlSanitizer = HtmlSanitizer();
     _initializeReader();
   }
   
@@ -48,6 +61,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       setState(() {
         _isLoading = true;
         _errorMessage = '';
+        _loadingMessage = 'Verifying ZIM file...';
       });
       
       // Verify file exists
@@ -56,31 +70,55 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         throw Exception('ZIM file not found at ${widget.zimFilePath}');
       }
       
+      setState(() {
+        _loadingMessage = 'Initializing ZIM reader...';
+      });
+      
       // Initialize ZIM reader
       _zimReader = ZimReader(widget.zimFilePath, _memoryManager);
       await _zimReader!.initialize();
       
+      setState(() {
+        _loadingMessage = 'Loading metadata...';
+      });
+      
       // Get total entry count
       _totalEntries = await _zimReader!.getEntryCount();
+      
+      setState(() {
+        _loadingMessage = 'Loading article entries...';
+      });
       
       // Load first page of entries
       await _loadEntries();
       
+      setState(() {
+        _loadingMessage = 'Loading main page...';
+      });
+      
       // Try to load main page (index.html or similar)
       await _loadMainPage();
       
-    } catch (e) {
+      setState(() {
+        _isInitialized = true;
+      });
+      
+    } catch (e, stackTrace) {
+      debugPrint('Error initializing ZIM reader: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
       setState(() {
         _errorMessage = 'Failed to open ZIM file: $e';
       });
     } finally {
       setState(() {
         _isLoading = false;
+        _loadingMessage = null;
       });
     }
   }
   
-  Future<void> _loadEntries({int? page, String? searchQuery}) async {
+  Future<void> _loadEntries({int? page}) async {
     try {
       setState(() {
         _isLoading = true;
@@ -109,58 +147,171 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
   }
   
   Future<void> _loadEntry(ZimEntry entry) async {
+    if (!_isInitialized || _zimReader == null) {
+      setState(() {
+        _errorMessage = 'ZIM reader not initialized';
+      });
+      return;
+    }
+    
     try {
       setState(() {
         _isLoading = true;
         _currentEntry = entry;
         _currentContent = null;
+        _sanitizedContent = null;
+        _loadingMessage = 'Loading article ${entry.title}...';
       });
+      
+      // Add to navigation history
+      if (_currentEntry != null && _navigationHistory.isNotEmpty && 
+          _navigationHistory.last.url != _currentEntry!.url) {
+        _navigationHistory.add(_currentEntry!);
+      }
+      if (_navigationHistory.length > 50) {
+        // Limit history size
+        _navigationHistory.removeAt(0);
+      }
       
       // Get content for the entry
       final content = await _zimReader!.getContentByUrl(entry.url);
       
+      // Apply HTML sanitization for security if this is HTML content
+      String processedContent = content;
+      if (entry.isArticle && content.isNotEmpty) {
+        setState(() {
+          _loadingMessage = 'Sanitizing content...';
+        });
+        
+        try {
+          // Extract base URL for resolving relative links
+          String baseUrl = 'zim://${entry.url}';
+          if (entry.url.contains('/')) {
+            baseUrl = 'zim://${entry.url.substring(0, entry.url.lastIndexOf('/'))}/';
+          }
+          
+          // Sanitize HTML content
+          processedContent = _htmlSanitizer.sanitize(content, baseUrl: baseUrl);
+        } catch (sanitizeError) {
+          debugPrint('HTML sanitization error: $sanitizeError');
+          // Continue with unsanitized content if sanitization fails
+          // but add a warning banner
+          processedContent = '''
+            <div style="background-color: #FFF3CD; color: #856404; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+              <strong>Warning:</strong> Content could not be fully sanitized. Some elements may be disabled.
+            </div>
+            $content
+          ''';
+        }
+      }
+      
       setState(() {
-        _currentContent = content;
+        _currentContent = content; // Keep original content
+        _sanitizedContent = processedContent; // Store sanitized version for display
         _isLoading = false;
+        _loadingMessage = null;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error loading entry: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
       setState(() {
         _errorMessage = 'Failed to load content: $e';
         _isLoading = false;
+        _loadingMessage = null;
       });
     }
   }
   
   Future<void> _loadMainPage() async {
+    if (!_isInitialized || _zimReader == null) {
+      setState(() {
+        _errorMessage = 'ZIM reader not initialized';
+      });
+      return;
+    }
+    
     try {
-      // First try A/index.html
-      const mainPageUrl = 'A/index.html';
-      try {
-        final content = await _zimReader!.getContentByUrl(mainPageUrl);
-        if (content.isNotEmpty) {
-          setState(() {
-            _currentEntry = ZimEntry(
-              url: mainPageUrl,
+      setState(() {
+        _loadingMessage = 'Looking for main page...';
+      });
+      
+      // Clear navigation history when loading main page
+      _navigationHistory.clear();
+      
+      // Try multiple possible main page URLs in order of likelihood
+      final potentialMainPages = [
+        'A/index.html',
+        'A/main.html',
+        'A/default.html',
+        'A/home.html',
+        'A/Main_Page',
+      ];
+      
+      for (final url in potentialMainPages) {
+        try {
+          final content = await _zimReader!.getContentByUrl(url);
+          if (content.isNotEmpty) {
+            final mainEntry = ZimEntry(
+              url: url,
               title: 'Main Page',
               mimeType: 'text/html',
+              isRedirect: false,
+              namespace: 'A',
               clusterIndex: 0,
+              blobIndex: 0,
               blobOffset: 0,
               blobSize: content.length,
             );
-            _currentContent = content;
-          });
-          return;
+            
+            // Load the entry properly to ensure sanitization
+            await _loadEntry(mainEntry);
+            return;
+          }
+        } catch (pageError) {
+          debugPrint('Error loading $url: $pageError');
+          // Continue to next potential page
         }
-      } catch (_) {
-        // Failed, try next option
       }
       
-      // If there are entries, load the first one
+      // Try to find a welcome or main article
+      try {
+        setState(() {
+          _loadingMessage = 'Searching for welcome article...';
+        });
+        
+        // Look for common article names
+        final commonArticles = ['welcome', 'start', 'introduction', 'main'];
+        for (final term in commonArticles) {
+          final entries = await _zimReader!.searchEntries(term, limit: 5);
+          if (entries.isNotEmpty) {
+            await _loadEntry(entries.first);
+            return;
+          }
+        }
+      } catch (searchError) {
+        debugPrint('Error searching for welcome article: $searchError');
+      }
+      
+      // If all else fails, load the first entry
       if (_currentEntries.isNotEmpty) {
         await _loadEntry(_currentEntries.first);
+      } else {
+        // Attempt to load at least the first few entries
+        await _loadEntries(page: 0);
+        if (_currentEntries.isNotEmpty) {
+          await _loadEntry(_currentEntries.first);
+        }
       }
-    } catch (e) {
-      // Silently fail, the entry list will still be shown
+      
+    } catch (e, stackTrace) {
+      debugPrint('Error loading main page: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      setState(() {
+        _errorMessage = 'Failed to load main page: $e';
+        _loadingMessage = null;
+      });
     }
   }
   
@@ -294,79 +445,253 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
   }
   
   Widget _buildContentView() {
-    if (_currentContent == null) {
-      return const Center(
-        child: Text('Select an entry to view its content'),
-      );
-    }
-    
-    if (_currentEntry == null) {
-      return const Center(
-        child: Text('No entry selected'),
-      );
-    }
-    
-    // For images
-    if (_currentEntry!.isImage) {
-      return const Center(
-        child: Text('[Image content would be displayed here]'),
-      );
-    }
-    
-    // For HTML content
-    if (_currentEntry!.isArticle) {
-      return SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Html(
-            data: _currentContent!,
-            style: {
-              'body': Style(
-                fontSize: FontSize(16),
-                padding: EdgeInsets.zero,
-                margin: EdgeInsets.zero,
-              ),
-              'a': Style(
-                color: Colors.blue,
-              ),
-            },
-            onLinkTap: (url, _, __, ___) {
-              if (url != null && url.startsWith('A/')) {
-                // Handle internal links
-                _zimReader?.getContentByUrl(url).then((content) {
-                  setState(() {
-                    _currentEntry = ZimEntry(
-                      url: url,
-                      title: url.split('/').last,
-                      mimeType: 'text/html',
-                      clusterIndex: 0,
-                      blobOffset: 0,
-                      blobSize: content.length,
-                    );
-                    _currentContent = content;
-                  });
-                });
-              }
-            },
-          ),
+    // Show loading indicator with message if applicable
+    if (_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            if (_loadingMessage != null)
+              Text(_loadingMessage!, style: const TextStyle(fontSize: 16)),
+          ],
         ),
       );
     }
     
-    // For other content types
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(_currentContent!),
-      ),
-    );
+    // Show message if no entry is selected
+    if (_currentEntry == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.article_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('No article selected', style: TextStyle(fontSize: 18)),
+            const SizedBox(height: 8),
+            if (_currentEntries.isNotEmpty)
+              ElevatedButton(
+                onPressed: () => _loadEntry(_currentEntries.first),
+                child: const Text('Load first article'),
+              ),
+          ],
+        ),
+      );
+    }
+    
+    // Handle different content types
+    if (_currentEntry!.isImage) {
+      // For image content
+      if (_currentContent != null && _currentContent!.startsWith('data:image/')) {
+        // Display the image from data URL
+        return Center(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Image.network(
+                    _currentContent!,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Column(
+                        children: [
+                          Icon(Icons.broken_image, size: 64, color: Colors.red),
+                          SizedBox(height: 16),
+                          Text('Failed to load image', style: TextStyle(color: Colors.red)),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    _currentEntry!.title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        // Image content not available or in wrong format
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.image_not_supported, size: 64, color: Colors.orange),
+              SizedBox(height: 16),
+              Text('Image content cannot be displayed', style: TextStyle(fontSize: 16)),
+            ],
+          ),
+        );
+      }
+    } else if (_currentEntry!.isArticle) {
+      // For HTML content
+      final content = _sanitizedContent ?? _currentContent;
+      if (content == null || content.isEmpty) {
+        return const Center(
+          child: Text('No content available'),
+        );
+      }
+      
+      return Stack(
+        children: [
+          // Content view
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Html(
+                data: content,
+                style: {
+                  'body': Style(
+                    fontSize: FontSize(16),
+                    padding: EdgeInsets.zero,
+                    margin: EdgeInsets.zero,
+                  ),
+                  'h1': Style(fontSize: FontSize(24), fontWeight: FontWeight.bold),
+                  'h2': Style(fontSize: FontSize(22), fontWeight: FontWeight.bold),
+                  'h3': Style(fontSize: FontSize(20), fontWeight: FontWeight.bold),
+                  'h4': Style(fontSize: FontSize(18), fontWeight: FontWeight.bold),
+                  'a': Style(
+                    color: Colors.blue,
+                    textDecoration: TextDecoration.underline,
+                  ),
+                  'img': Style(alignment: Alignment.center),
+                  'table': Style(border: Border.all(color: Colors.grey)),
+                  'th': Style(padding: HtmlPaddings.all(8), backgroundColor: Colors.grey[200]),
+                  'td': Style(padding: HtmlPaddings.all(8)),
+                },
+                onLinkTap: (url, _, __, ___) {
+                  if (url == null) return;
+                  
+                  // Handle internal links
+                  if (url.startsWith('A/') || url.startsWith('/')) {
+                    // Normalize URL
+                    final normalizedUrl = url.startsWith('/') ? 'A$url' : url;
+                    
+                    // Create a temporary entry to load
+                    final linkEntry = ZimEntry(
+                      url: normalizedUrl,
+                      title: normalizedUrl.split('/').last,
+                      mimeType: 'text/html',
+                      isRedirect: false,
+                      namespace: 'A',
+                      clusterIndex: -1, // Will be resolved during content loading
+                      blobIndex: -1,
+                      blobOffset: -1,
+                      blobSize: -1,
+                    );
+                    
+                    _loadEntry(linkEntry);
+                  } else if (url.startsWith('http://') || url.startsWith('https://')) {
+                    // Handle external links
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('External Link'),
+                        content: Text('This link points to an external website: $url'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // In a real app, you would launch the URL
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('External links will be supported in a future update: $url'),
+                                ),
+                              );
+                            },
+                            child: const Text('Open'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+          
+          // Navigation history back button (only if we have history)
+          if (_navigationHistory.isNotEmpty)
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: FloatingActionButton(
+                heroTag: 'back_button',
+                mini: true,
+                backgroundColor: Colors.white.withOpacity(0.8),
+                child: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () {
+                  // Pop the last entry from history and load it
+                  if (_navigationHistory.isNotEmpty) {
+                    final previousEntry = _navigationHistory.removeLast();
+                    // Prevent adding to history again during this operation
+                    setState(() {
+                      _navigationHistory.remove(_currentEntry);
+                    });
+                    _loadEntry(previousEntry);
+                  }
+                },
+              ),
+            ),
+        ],
+      );
+    } else {
+      // For other content types (plain text, etc.)
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _currentEntry!.title,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text('MIME Type: ${_currentEntry!.mimeType}'),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              SelectableText(_currentContent ?? 'No content available'),
+            ],
+          ),
+        ),
+      );
+    }
   }
   
   @override
   void dispose() {
+    // Clean up resources to prevent memory leaks
     _searchController.dispose();
     _zimReader?.dispose();
     _memoryManager.dispose();
+    
+    // Clear state
+    _currentEntries.clear();
+    _navigationHistory.clear();
+    _searchResults.clear();
+    
     super.dispose();
   }
 
@@ -374,14 +699,73 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentEntry?.title ?? 'ZIM Reader'),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _currentEntry?.title ?? 'Robinpedia ZIM Reader',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
         actions: [
+          // Home button
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () {
+              _loadMainPage();
+            },
+            tooltip: 'Home Page',
+          ),
+          
+          // Search button
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Show search dialog
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Search Articles'),
+                  content: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter search term',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) {
+                      Navigator.pop(context);
+                      _search();
+                    },
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _search();
+                      },
+                      child: const Text('Search'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            tooltip: 'Search',
+          ),
+          
+          // Refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _initializeReader,
             tooltip: 'Reload',
           ),
-          // Add annotation icon when entry is loaded
+          
+          // Annotation button (when an entry is loaded)
           if (_currentEntry != null)
             IconButton(
               icon: const Icon(Icons.edit),
@@ -394,24 +778,150 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
               },
               tooltip: 'Annotate',
             ),
+            
+          // Menu button
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'about':
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('About Robinpedia'),
+                      content: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Robinpedia ZIM Reader'),
+                          SizedBox(height: 8),
+                          Text('Version: 0.1.0 (Development Build)'),
+                          SizedBox(height: 8),
+                          Text('Copyright (C)2025 Robin L. M. Cheung, MBA'),
+                          SizedBox(height: 16),
+                          Text('A clean-room implementation of a ZIM file reader.'),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                  break;
+                case 'file_info':
+                  if (_zimReader != null && _isInitialized) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('ZIM File Information'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('File: ${widget.zimFilePath.split('/').last}'),
+                            const SizedBox(height: 8),
+                            Text('Total Entries: $_totalEntries'),
+                            const SizedBox(height: 8),
+                            Text('Current Page: ${_currentPage + 1}'),
+                            const SizedBox(height: 8),
+                            const Text('Status: Loaded successfully'),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'file_info',
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline),
+                    SizedBox(width: 8),
+                    Text('File Information'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'about',
+                child: Row(
+                  children: [
+                    Icon(Icons.help_outline),
+                    SizedBox(width: 8),
+                    Text('About'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: _errorMessage.isNotEmpty
           ? Center(
-              child: Text(
-                _errorMessage,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Text(
+                      _errorMessage,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _initializeReader,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
               ),
             )
           : _isLoading && _currentEntries.isEmpty
-              ? const Center(
-                  child: CircularProgressIndicator(),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      if (_loadingMessage != null)
+                        Text(_loadingMessage!, style: const TextStyle(fontSize: 16)),
+                    ],
+                  ),
                 )
               : Row(
                   children: [
-                    // Entry list sidebar (1/3 of screen)
+                    // Entry list sidebar (1/4 of screen on large devices, less on small)
                     SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.3,
+                      width: MediaQuery.of(context).size.width < 600
+                          ? MediaQuery.of(context).size.width * 0.35
+                          : MediaQuery.of(context).size.width * 0.25,
                       child: _buildEntryList(),
                     ),
                     
@@ -422,14 +932,10 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                       color: Theme.of(context).dividerColor,
                     ),
                     
-                    // Content view (2/3 of screen)
+                    // Content view (3/4 of screen)
                     Expanded(
-                      flex: 2,
-                      child: _isLoading && _currentEntry != null
-                          ? const Center(
-                              child: CircularProgressIndicator(),
-                            )
-                          : _buildContentView(),
+                      flex: 3,
+                      child: _buildContentView(),
                     ),
                   ],
                 ),

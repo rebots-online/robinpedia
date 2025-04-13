@@ -223,7 +223,7 @@ class ContentExtractor {
     }
     
     // Calculate blob offset and size
-    final blobIndexOffset = 4; // Skip blob count (4 bytes)
+    const blobIndexOffset = 4; // Skip blob count (4 bytes)
     final blobOffsetPos = blobIndexOffset + (entry.blobNumber * 4);
     
     // Read blob offset within the cluster

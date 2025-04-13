@@ -163,26 +163,29 @@ class Article {
 
 /// Service for extracting content from ZIM files
 class ContentExtractor {
-  /// Cluster manager for accessing ZIM file data
-  final EnhancedClusterManager _clusterManager;
+  /// The memory manager
+  final MemoryManager memoryManager;
   
-  /// Memory manager for efficient buffer handling
-  final MemoryManager _memoryManager = MemoryManager();
-  
-  /// HTML sanitizer for cleaning article content
-  final HtmlSanitizer _sanitizer = HtmlSanitizer();
-  
-  /// MIME type handlers
+  /// Map of MIME types to content handlers
   final Map<String, ContentTypeHandler> _typeHandlers = {};
   
-  /// Constructor
-  ContentExtractor(this._clusterManager) {
+  /// Fallback handler for unknown MIME types
+  late final ContentTypeHandler _fallbackHandler;
+  
+  /// HTML content handler
+  late final HtmlContentHandler _htmlHandler;
+  
+  /// Create a content extractor
+  ContentExtractor({required this.memoryManager}) {
     _registerTypeHandlers();
+    _fallbackHandler = _typeHandlers['application/octet-stream']!;
+    _htmlHandler = _typeHandlers['text/html'] as HtmlContentHandler;
   }
   
   /// Register content type handlers
   void _registerTypeHandlers() {
     // Register handlers for various MIME types
+    _typeHandlers['text/html'] = HtmlContentHandler(HtmlSanitizer());
     _typeHandlers['text/html'] = HtmlContentHandler(_sanitizer);
     _typeHandlers['text/plain'] = TextContentHandler();
     _typeHandlers['text/css'] = TextContentHandler();
@@ -223,7 +226,7 @@ class ContentExtractor {
     }
     
     // Calculate blob offset and size
-    final blobIndexOffset = 4; // Skip blob count (4 bytes)
+    const blobIndexOffset = 4; // Skip blob count (4 bytes)
     final blobOffsetPos = blobIndexOffset + (entry.blobNumber * 4);
     
     // Read blob offset within the cluster
@@ -257,6 +260,55 @@ class ContentExtractor {
     
     // Process with the appropriate handler
     return handler.processContent(entry, blobData);
+  }
+  
+  /// Extract and process content from raw bytes
+  /// 
+  /// This method processes content directly from binary data without requiring a DirectoryEntry.
+  /// It is used by the ZimReader when extracting content from clusters that have already been
+  /// decompressed.
+  /// 
+  /// @param contentBytes The raw content bytes to extract
+  /// @param mimeType The MIME type of the content
+  /// @param url The URL of the content (for reference in processing)
+  /// @return The processed content as a string
+  Future<String> extractContent(Uint8List contentBytes, String mimeType, String url) async {
+    try {
+      // Create a minimal DirectoryEntry for content handlers that require it
+      final entry = DirectoryEntry(
+        title: url.split('/').last,
+        url: url,
+        mimeType: mimeType,
+        clusterNumber: -1,  // Not referring to an actual cluster
+        blobNumber: -1,     // Not referring to an actual blob
+      );
+      
+      // Get the appropriate handler for this content type
+      final handler = _typeHandlers[mimeType] ?? _fallbackHandler;
+      
+      // Process the content based on MIME type
+      final result = await handler.processContent(entry, contentBytes);
+      
+      // Ensure we return a string
+      if (result is String) {
+        return result;
+      } else if (result is Uint8List) {
+        // For binary data like images, encode as base64 data URL
+        if (mimeType.startsWith('image/')) {
+          return 'data:$mimeType;base64,${base64Encode(result)}';
+        } else {
+          // Other binary data, return as base64
+          return base64Encode(result);
+        }
+      } else {
+        // Convert other results to string
+        return result.toString();
+      }
+    } catch (e) {
+      // Log the error and provide a fallback
+      debugPrint('Error extracting content: $e for URL: $url');
+      return 'Error extracting content: ${e.toString()}';
+    }
   }
   
   /// Extract an article from a directory entry

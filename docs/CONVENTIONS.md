@@ -200,6 +200,47 @@ The app supports the following Android architectures:
 - Standard Operating Procedures: `SOP-[Process].md`
 - Meeting notes: `MEETING-[Topic]-[date].md`
 
+## Branding and Customization Standards
+
+### Branding Repository Structure
+```
+assets/
+├── branding/                # Core branding assets
+│   ├── flowlu/              # Phase 1: Flowlu brand repository
+│   │   ├── logos/           # Logo variations (PNG, SVG, etc.)
+│   │   ├── splash/          # Splash screen assets
+│   │   ├── colors.json      # Brand color definitions
+│   │   └── strings.json     # Brand-specific strings
+│   └── builder/             # Phase 2: Homegrown builder platform
+│       ├── client_configs/  # Client-specific configurations
+│       ├── templates/       # Branding templates
+│       └── renderer/        # Dynamic asset renderer
+└── themes/                  # Theme implementations referencing branding
+```
+
+### Branding Namespace
+- All branding assets must be accessed through the standardized namespace: `BrandingProvider`
+- Implementation in: `lib/core/branding/branding_provider.dart`
+- Never hardcode brand elements directly in UI components
+- Brand access pattern: `BrandingProvider.of(context).getAsset('logo_primary')`
+
+### Splash Screen Standard
+- All applications must implement a standardized splash screen
+- Splash screen must dynamically load branding from the appropriate repository
+- Implementation in: `lib/core/splash/branded_splash_screen.dart`
+- Uses `BrandingProvider` to pull branding assets, name, and logo from standardized namespace
+
+### Customization Protocol
+- Rebranding should require zero code changes besides configuration updates
+- All brand elements must support runtime switching for white-label scenarios
+- Strings, colors, imagery, and layout parameters must be externalized
+- Reference implementation: `lib/core/branding/rebrandable_component.dart`
+
+### Branding Verification
+- Pre-launch checklist must include branding verification step
+- All brand touchpoints must be validated against brand guidelines
+- Integration tests must be included to verify brand consistency across application
+
 ## Deviations from All-Project SOPs
 
 - *Currently, there are no deviations from the all-project SOPs.*
