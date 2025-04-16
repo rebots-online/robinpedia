@@ -1,26 +1,26 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'src/screens/zim_download_placeholder.dart';
+import 'src/screens/zim_download_screen.dart';
 
-// IMPORTANT: This is a simplified web-friendly implementation
-// The native version should use the full ZimDownloadScreen implementation
-// once FFI issues on the web platform are resolved
+// Platform-aware entrypoint for Robinpedia
 
 void main() {
-  // Initialize Flutter bindings
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Disable any router or navigation logic that might be overriding our home screen
-  // This ensures we see our placeholder screen directly
-  runApp(const DirectZimDownloadApp());
+  runApp(const RobinpediaApp());
 }
 
-class DirectZimDownloadApp extends StatelessWidget {
-  const DirectZimDownloadApp({super.key});
+class RobinpediaApp extends StatelessWidget {
+  const RobinpediaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final Widget homeWidget = kIsWeb
+        ? const ZimDownloadPlaceholder()
+        : const ZimDownloadScreen();
+
     return MaterialApp(
       title: 'Robinpedia',
       theme: ThemeData(
@@ -39,10 +39,8 @@ class DirectZimDownloadApp extends StatelessWidget {
       ),
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
-      // Forcefully set initial route to null and directly show our placeholder
-      initialRoute: null,
-      home: const ZimDownloadPlaceholder(),
-      routes: const {}, // Empty routes to prevent any automatic navigation
+      home: homeWidget,
+      routes: const {}, // No auto navigation
     );
   }
 }
