@@ -283,7 +283,7 @@ class HtmlSanitizer {
   /// @return True if the URL is safe, false otherwise
   bool _isSafeUrl(String urlValue) {
     // Extract the URL from url(...)
-    var match = RegExp(r'url\s*\(\s*["\']?(.*?)["']?s*)').firstMatch(urlValue);
+    var match = RegExp(r'url\s*\(\s*["\']?(.*?)["\']?\s*\)').firstMatch(urlValue);
     
     
     var url = match.group(1) ?? '';

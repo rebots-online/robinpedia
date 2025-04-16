@@ -185,7 +185,6 @@ class ContentExtractor {
   /// Register content type handlers
   void _registerTypeHandlers() {
     // Register handlers for various MIME types
-    _typeHandlers['text/html'] = HtmlContentHandler(HtmlSanitizer());
     _typeHandlers['text/html'] = HtmlContentHandler(_sanitizer);
     _typeHandlers['text/plain'] = TextContentHandler();
     _typeHandlers['text/css'] = TextContentHandler();
