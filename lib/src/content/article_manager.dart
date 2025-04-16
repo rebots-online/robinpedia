@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'article_parser.dart';
 import '../storage/secure_storage.dart';
 import '../storage/database_service.dart';

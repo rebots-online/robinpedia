@@ -72,8 +72,8 @@ class ZimTestHelper {
     const headerEnd = 72; // Header size
     const urlPtrPos = headerEnd;
     const titlePtrPos = urlPtrPos + 16; // 2 entries * 8 bytes
-    final clusterPtrPos = titlePtrPos + 16;
-    final mimeListPos = clusterPtrPos + 8;
+    const clusterPtrPos = titlePtrPos + 16;
+    const mimeListPos = clusterPtrPos + 8;
 
     // Calculate MIME list size
     final mimeListSize = _mimeTypes.fold<int>(

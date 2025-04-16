@@ -307,7 +307,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                               value: progress / 100.0,
                                               minHeight: 8,
                                               backgroundColor: Colors.grey.shade200,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
                                             ),
                                             const SizedBox(height: 4),
                                             Row(

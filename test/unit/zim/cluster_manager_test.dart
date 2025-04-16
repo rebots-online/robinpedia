@@ -97,7 +97,7 @@ void main() {
       await fileHandle.close();
 
       // Use predictable test content
-      final testContent = 'LZMA test content that should be decompressed';
+      const testContent = 'LZMA test content that should be decompressed';
       await _writeMockLzmaTestCluster(testFile, utf8.encode(testContent));
       fileHandle = await testFile.open();
       manager = ClusterManager(fileHandle);

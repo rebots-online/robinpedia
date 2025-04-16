@@ -137,7 +137,7 @@ class LzmaDecompressionService {
     
     // Check if we need to trim the cache due to size constraints
     if (_cacheSizeLimit != null) {
-      while (_currentCacheSize + decompressedData.length > _cacheSizeLimit! && 
+      while (_currentCacheSize + decompressedData.length > _cacheSizeLimit && 
              _cacheAccessOrder.isNotEmpty) {
         _evictLeastRecentlyUsed();
       }

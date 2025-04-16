@@ -127,7 +127,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
                     style: {
                       "body": Style(
                         fontSize: FontSize(18.0),
-                        lineHeight: LineHeight(1.6),
+                        lineHeight: const LineHeight(1.6),
                         color: _getTextColor(context),
                       ),
                       "a": Style(
@@ -242,7 +242,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
       return;
     }
 
-    if (mounted && await _shouldShowSharePrompt()) {
+    if (mounted && _shouldShowSharePrompt()) {
       await showDialog(
         context: context,
         builder: (context) => SharePrompt(article: article),
@@ -261,7 +261,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
 
     if (isNight) {
       return ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Color(0xFF1A1B26),
+        scaffoldBackgroundColor: const Color(0xFF1A1B26),
         textTheme: Theme.of(context).textTheme.apply(
           bodyColor: Colors.white70,
           displayColor: Colors.white,
@@ -275,7 +275,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
   Color _getBackgroundColor(BuildContext context) {
     final now = DateTime.now();
     final isNight = now.hour >= 20 || now.hour <= 6;
-    return isNight ? Color(0xFF1A1B26) : Colors.white;
+    return isNight ? const Color(0xFF1A1B26) : Colors.white;
   }
 
   Color _getTextColor(BuildContext context) {
@@ -304,7 +304,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
     // Strip HTML and limit length
     final text = content.replaceAll(RegExp(r'<[^>]*>'), '');
     return text.length > 200
-      ? text.substring(0, 200) + '...'
+      ? '${text.substring(0, 200)}...'
       : text;
   }
 
@@ -319,8 +319,8 @@ class _ArticleViewerState extends State<ArticleViewer> {
           end: Alignment.bottomCenter,
           colors: isNight
             ? [
-                Color(0xFF1A1B26),
-                Color(0xFF24283B),
+                const Color(0xFF1A1B26),
+                const Color(0xFF24283B),
               ]
             : [
                 Colors.blue.shade50,
@@ -367,7 +367,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
             size: 64,
             color: Colors.red.withOpacity(0.5),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Failed to load article',
             style: TextStyle(
@@ -375,7 +375,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
               color: _getTextColor(context),
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             error.toString(),
             style: TextStyle(
@@ -398,7 +398,7 @@ class _ArticleViewerState extends State<ArticleViewer> {
               _getTextColor(context),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Loading knowledge...',
             style: TextStyle(
@@ -417,11 +417,11 @@ class _ArticleViewerState extends State<ArticleViewer> {
       onPressed: () {
         _scrollController.animateTo(
           0,
-          duration: Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 500),
           curve: Curves.easeOutQuad,
         );
       },
-      child: Icon(Icons.arrow_upward),
+      child: const Icon(Icons.arrow_upward),
     ).animate()
       .scale(duration: 200.ms)
       .fadeIn(duration: 200.ms);

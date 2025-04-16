@@ -327,7 +327,7 @@ class LZMABinding extends AbstractFFIBinding {
     }
     
     // Output buffer management
-    final outputSize = 64 * 1024; // 64KB chunks
+    const outputSize = 64 * 1024; // 64KB chunks
     final outputPtr = calloc<Uint8>(outputSize);
     
     try {

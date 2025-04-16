@@ -26,13 +26,13 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
   
   // State variables
   List<ZimCatalogItem> _catalogItems = [];
-  List<Map<String, String>> _languages = [
+  final List<Map<String, String>> _languages = [
     {'code': 'eng', 'name': 'English', 'count': '42'},
     {'code': 'fra', 'name': 'French', 'count': '28'},
     {'code': 'spa', 'name': 'Spanish', 'count': '31'},
     {'code': 'deu', 'name': 'German', 'count': '24'},
   ];
-  List<Map<String, String>> _categories = [
+  final List<Map<String, String>> _categories = [
     {'id': 'wikipedia', 'name': 'Wikipedia', 'count': '120'},
     {'id': 'wiktionary', 'name': 'Wiktionary', 'count': '45'},
     {'id': 'wikivoyage', 'name': 'Wikivoyage', 'count': '25'},
@@ -315,11 +315,11 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
             ),
             const SizedBox(height: 8),
             // Description & stats
-            if (item.description != null && item.description!.isNotEmpty)
+            if (item.description.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
-                  item.description!,
+                  item.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: Colors.grey.shade700),

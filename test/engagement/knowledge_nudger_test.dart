@@ -17,7 +17,7 @@ void main() {
     final subscription = nudger.startNudging().listen(facts.add);
 
     // Wait for a few nudges
-    await Future.delayed(Duration(seconds: 5));
+    await Future.delayed(const Duration(seconds: 5));
     
     expect(facts, isNotEmpty);
     subscription.cancel();
@@ -29,7 +29,7 @@ void main() {
 
     // Just verify it doesn't crash at different hours
     // We'll let real users test the late-night behavior 😉
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
     
     expect(facts, isNotEmpty);
     subscription.cancel();

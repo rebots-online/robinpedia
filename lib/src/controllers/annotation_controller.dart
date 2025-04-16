@@ -1,7 +1,6 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/annotation.dart';
 import '../storage/annotation_repository.dart';
@@ -347,7 +346,7 @@ class AnnotationController extends ChangeNotifier {
   
   void updateTextAnnotation(String id, String newText) {
     final index = _annotations.indexWhere((a) => a.id == id);
-    if (index == -1 || !(_annotations[index] is TextAnnotation)) return;
+    if (index == -1 || _annotations[index] is! TextAnnotation) return;
     
     final annotation = _annotations[index] as TextAnnotation;
     final updated = annotation.copyWith(
@@ -377,8 +376,4 @@ class AnnotationController extends ChangeNotifier {
     notifyListeners();
   }
   
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

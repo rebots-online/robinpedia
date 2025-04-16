@@ -1,9 +1,6 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 
 /// Handles LZMA2 decompression of ZIM file clusters

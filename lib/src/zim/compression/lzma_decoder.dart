@@ -79,7 +79,7 @@ class LzmaDecoder {
     } else if (result is String) {
       throw LzmaException(result);
     } else {
-      throw LzmaException('Unknown error during decompression');
+      throw const LzmaException('Unknown error during decompression');
     }
   }
 

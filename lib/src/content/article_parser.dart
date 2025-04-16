@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../storage/secure_storage.dart';
-import '../models/article.dart';
 
 /// Handles parsing and sanitizing article content with proper image and link handling
 class ArticleParser {

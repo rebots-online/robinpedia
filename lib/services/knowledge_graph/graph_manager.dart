@@ -20,7 +20,7 @@ class KnowledgeNode {
     List<String>? tags,
     DateTime? timestamp,
     required this.source,
-  })  : id = id ?? Uuid().v4(),
+  })  : id = id ?? const Uuid().v4(),
         metadata = metadata ?? {},
         tags = tags ?? [],
         timestamp = timestamp ?? DateTime.now();

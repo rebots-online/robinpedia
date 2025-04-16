@@ -5,10 +5,8 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' show min;
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:collection/collection.dart';
 
 import 'lzma_decompression.dart';
 import '../utils/memory_manager.dart';
@@ -334,7 +332,7 @@ class EnhancedClusterManager {
     if (_prefetchQueue.isEmpty || _prefetchSendPort == null) return;
     
     // Limit concurrent prefetches to 2
-    final maxConcurrentPrefetches = 2;
+    const maxConcurrentPrefetches = 2;
     final prefetchCount = min(maxConcurrentPrefetches, _prefetchQueue.length);
     
     for (var i = 0; i < prefetchCount; i++) {

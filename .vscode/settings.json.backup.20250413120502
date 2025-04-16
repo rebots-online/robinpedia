@@ -1,8 +1,5 @@
 {
-    // Required Java configuration for running VSCode Java extension
-    "java.jdt.ls.java.home": "/usr/lib/jvm/temurin-21-jdk-amd64",
-    
-    // Configure multiple Java runtimes as per RedHat documentation
+    // Java configuration for multiple JDK support
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-21",
@@ -15,11 +12,12 @@
         }
     ],
     
-    // Use Java 17 for Gradle to ensure compatibility
+    // Java settings that help with mixed version projects
+    "java.jdt.ls.java.home": "/usr/lib/jvm/temurin-21-jdk-amd64",
     "java.import.gradle.java.home": "/usr/lib/jvm/java-17-openjdk-amd64",
-    
-    // Additional helpful settings
     "java.configuration.updateBuildConfiguration": "automatic",
+    
+    // Recommended Java extension settings
     "java.completion.importOrder": [
         "java",
         "javax",
@@ -31,6 +29,5 @@
         "addOverride"
     ],
     "java.format.settings.url": "https://raw.githubusercontent.com/google/styleguide/gh-pages/eclipse-java-google-style.xml",
-    "java.format.settings.profile": "GoogleStyle",
-    "cmake.sourceDirectory": "/home/robin/CascadeProjects/robinpedia/linux"
+    "java.format.settings.profile": "GoogleStyle"
 }

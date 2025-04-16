@@ -5,10 +5,8 @@ import 'package:robinpedia/src/models/annotation.dart';
 import 'package:robinpedia/src/controllers/annotation_controller.dart';
 import 'package:robinpedia/src/storage/annotation_repository.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -22,7 +20,7 @@ class MockPathProviderPlatform extends Mock implements PathProviderPlatform {
 void main() {
   late AnnotationController controller;
   late AnnotationRepository repository;
-  final String testArticleId = 'test_article_id';
+  const String testArticleId = 'test_article_id';
   
   setUp(() async {
     // Ensure test directory exists
@@ -161,7 +159,7 @@ void main() {
       );
       
       // Update the annotation
-      final updatedText = 'Updated text';
+      const updatedText = 'Updated text';
       controller.updateTextAnnotation(
         id: textAnnotation.id,
         text: updatedText,
