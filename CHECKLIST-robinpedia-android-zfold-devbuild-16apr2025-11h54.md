@@ -12,7 +12,7 @@
 - [ ] Catalog and prioritize all build errors from latest build log
 - [x] Fix regex and syntax errors in html_sanitizer.dart  <!-- Completed 16 Apr 2025, 12:32 EDT -->
 - [x] Resolve duplicate/extraneous method declarations in content_extractor.dart  <!-- Completed 16 Apr 2025, 12:52 EDT -->
-- [ ] Define or correct LzmaBinding in zim_reader.dart
+- [x] Define or correct LzmaBinding in zim_reader.dart  <!-- Completed 16 Apr 2025, 17:56 EDT -->
 - [ ] Correct constructor arguments for DownloadInfo in zim_download_screen.dart
 - [ ] Implement or remove getFilePathForZim usage in zim_download_screen.dart
 - [ ] Define _sanitizer and _clusterManager in content_extractor.dart or correct their usage

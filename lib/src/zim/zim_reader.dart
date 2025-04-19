@@ -29,7 +29,7 @@ class ZimReader {
   late final ContentExtractor _contentExtractor;
   
   /// LZMA binding for decompression
-  late final LzmaBinding _lzmaBinding;
+  late final LZMABinding _lzmaBinding;
   
   /// ZIM file header information
   Map<String, dynamic> _header = {};
@@ -56,8 +56,8 @@ class ZimReader {
       await _readHeader();
       
       // Initialize components
-      _lzmaBinding = LzmaBinding();
-      await _lzmaBinding.initialize();
+      _lzmaBinding = LZMABinding();
+      _lzmaBinding.initialize();
       
       _clusterManager = EnhancedClusterManager(
         file: _file,

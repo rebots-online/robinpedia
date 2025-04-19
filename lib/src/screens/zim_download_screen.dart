@@ -140,9 +140,9 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
             if (filePath != null) {
               setState(() {
                 _downloadStatus[item.id] = DownloadInfo(
-                  itemId: item.id,
+                  item: item,
                   status: DownloadStatus.completed,
-                  progress: 100.0,
+                  
                   downloadedBytes: item.size,
                   totalBytes: item.size,
                   filePath: filePath,
