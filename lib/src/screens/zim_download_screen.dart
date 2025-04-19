@@ -23,7 +23,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
   // Services
   final ZimCatalogService _catalogService = ZimCatalogService();
   final ZimDownloadService _downloadService = ZimDownloadService();
-  
+
   // State variables
   List<ZimCatalogItem> _catalogItems = [];
   final List<Map<String, String>> _languages = [
@@ -38,33 +38,33 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
     {'id': 'wikivoyage', 'name': 'Wikivoyage', 'count': '25'},
     {'id': 'other', 'name': 'Other', 'count': '62'},
   ];
-  
+
   String? _selectedLanguage;
   String? _selectedCategory;
-  
+
   bool _isLoading = true;
   String _errorMessage = '';
-  
+
   final Map<String, StreamSubscription<DownloadInfo>> _downloadSubscriptions = {};
   final Map<String, DownloadInfo> _downloadStatus = {};
-  
+
   @override
   void initState() {
     super.initState();
     _initialize();
   }
-  
+
   Future<void> _initialize() async {
     try {
       // Request permissions
       await _requestPermissions();
-      
+
       // Create necessary directories
       await _createDirectories();
-      
+
       // Initialize download service
       await _downloadService.initialize();
-      
+
       // Load catalog
       await _loadCatalog();
     } catch (e) {
@@ -73,7 +73,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       });
     }
   }
-  
+
   Future<void> _requestPermissions() async {
     try {
       final status = await Permission.storage.request();
@@ -84,21 +84,21 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       debugPrint('Error requesting permissions: $e');
     }
   }
-  
+
   Future<void> _createDirectories() async {
     try {
       final appDocDir = await getApplicationDocumentsDirectory();
       final zimDir = Directory('${appDocDir.path}/zim_files');
       final downloadsDir = Directory('${appDocDir.path}/downloads');
-      
+
       if (!await zimDir.exists()) {
         await zimDir.create(recursive: true);
       }
-      
+
       if (!await downloadsDir.exists()) {
         await downloadsDir.create(recursive: true);
       }
-      
+
       // Check if directories were created successfully
       if (!await zimDir.exists() || !await downloadsDir.exists()) {
         throw Exception('Failed to create required directories');
@@ -108,43 +108,41 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       rethrow;
     }
   }
-  
+
   Future<void> _loadCatalog() async {
     try {
       setState(() {
         _isLoading = true;
         _errorMessage = '';
       });
-      
+
       // For testing purposes, generate sample catalog items
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       final catalog = await _catalogService.searchCatalog(
         lang: _selectedLanguage,
         category: _selectedCategory,
       );
-      
+
       setState(() {
         _catalogItems = catalog;
-        
+
         // Also load/refresh local downloaded files status
         for (final item in _catalogItems) {
-          if (_downloadStatus.containsKey(item.id) && 
+          if (_downloadStatus.containsKey(item.id) &&
               _downloadStatus[item.id]!.status == DownloadStatus.completed) {
             // Keep the status for completed downloads
             continue;
           }
-          
+
           // Check if the file exists locally
           _downloadService.getFilePathForZim(item.id).then((filePath) {
             if (filePath != null) {
               setState(() {
                 _downloadStatus[item.id] = DownloadInfo(
-                  item: item,
-                  status: DownloadStatus.completed,
-                  
-                  downloadedBytes: item.size,
-                  totalBytes: item.size,
+                  zimId: item.id,
+                  progress: 100.0,
+                  status: DownloadStatus.complete,
                   filePath: filePath,
                 );
               });
@@ -164,10 +162,10 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       });
     }
   }
-  
+
   void _generateSampleItems() {
     final sampleItems = <ZimCatalogItem>[];
-    
+
     // Wikipedia samples
     sampleItems.add(
       ZimCatalogItem(
@@ -176,15 +174,12 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         size: 1024 * 1024 * 1024, // 1 GB
         language: 'eng',
         category: 'wikipedia',
-        url: 'https://download.kiwix.org/zim/wikipedia_en_all_mini_2023-03.zim',
+        downloadUrls: ['https://download.kiwix.org/zim/wikipedia_en_all_mini_2023-03.zim'],
         description: 'A mini version of the English Wikipedia encyclopedia',
-        articleCount: 50000,
-        pictureCount: 10000,
-        videoCount: 0,
-        date: DateTime(2023, 3, 1),
+        created: DateTime(2023, 3, 1),
       ),
     );
-    
+
     sampleItems.add(
       ZimCatalogItem(
         id: 'wikipedia_fr_all_mini_2023-04',
@@ -192,15 +187,12 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         size: 1024 * 1024 * 800, // 800 MB
         language: 'fra',
         category: 'wikipedia',
-        url: 'https://download.kiwix.org/zim/wikipedia_fr_all_mini_2023-04.zim',
+        downloadUrls: ['https://download.kiwix.org/zim/wikipedia_fr_all_mini_2023-04.zim'],
         description: 'Une version mini de l\'encyclopédie Wikipedia en français',
-        articleCount: 40000,
-        pictureCount: 8000,
-        videoCount: 0,
-        date: DateTime(2023, 4, 1),
+        created: DateTime(2023, 4, 1),
       ),
     );
-    
+
     // Wiktionary samples
     sampleItems.add(
       ZimCatalogItem(
@@ -209,15 +201,12 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         size: 1024 * 1024 * 500, // 500 MB
         language: 'eng',
         category: 'wiktionary',
-        url: 'https://download.kiwix.org/zim/wiktionary_en_all_2023-05.zim',
+        downloadUrls: ['https://download.kiwix.org/zim/wiktionary_en_all_2023-05.zim'],
         description: 'The English dictionary and language reference',
-        articleCount: 120000,
-        pictureCount: 2000,
-        videoCount: 0,
-        date: DateTime(2023, 5, 1),
+        created: DateTime(2023, 5, 1),
       ),
     );
-    
+
     // Wikivoyage samples
     sampleItems.add(
       ZimCatalogItem(
@@ -226,15 +215,12 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         size: 1024 * 1024 * 300, // 300 MB
         language: 'eng',
         category: 'wikivoyage',
-        url: 'https://download.kiwix.org/zim/wikivoyage_en_all_2023-06.zim',
+        downloadUrls: ['https://download.kiwix.org/zim/wikivoyage_en_all_2023-06.zim'],
         description: 'Travel guide with information about destinations worldwide',
-        articleCount: 30000,
-        pictureCount: 15000,
-        videoCount: 0,
-        date: DateTime(2023, 6, 1),
+        created: DateTime(2023, 6, 1),
       ),
     );
-    
+
     // Other samples
     sampleItems.add(
       ZimCatalogItem(
@@ -243,27 +229,24 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         size: 1024 * 1024 * 1200, // 1.2 GB
         language: 'eng',
         category: 'other',
-        url: 'https://download.kiwix.org/zim/stackoverflow_en_all_2023-02.zim',
+        downloadUrls: ['https://download.kiwix.org/zim/stackoverflow_en_all_2023-02.zim'],
         description: 'Programming and technical questions and answers archive',
-        articleCount: 200000,
-        pictureCount: 5000,
-        videoCount: 0,
-        date: DateTime(2023, 2, 1),
+        created: DateTime(2023, 2, 1),
       ),
     );
-    
+
     setState(() {
       _catalogItems = sampleItems;
     });
   }
-  
+
   Widget _buildCatalogItem(BuildContext context, int index) {
     final item = _catalogItems[index];
     final downloadStatus = _downloadStatus[item.id];
     final isDownloading = downloadStatus?.isDownloading ?? false;
     final isComplete = downloadStatus?.isComplete ?? false;
     final progress = downloadStatus?.progress ?? 0.0;
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       elevation: isComplete ? 4 : 1,
@@ -283,7 +266,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                       Text(
                         item.name,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold, 
+                          fontWeight: FontWeight.bold,
                           fontSize: 16
                         ),
                       ),
@@ -329,7 +312,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${_formatNumber(item.articleCount)} articles',
+                  'ZIM File',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
                 Text(
@@ -360,7 +343,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          isComplete 
+                          isComplete
                               ? 'Downloaded - Ready to use'
                               : 'Downloading: ${(progress).toStringAsFixed(1)}%',
                           style: TextStyle(
@@ -411,12 +394,12 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       ),
     );
   }
-  
+
   Widget _buildActionButton(ZimCatalogItem item) {
     final downloadStatus = _downloadStatus[item.id];
     final isDownloading = downloadStatus?.isDownloading ?? false;
     final isComplete = downloadStatus?.isComplete ?? false;
-    
+
     if (isComplete) {
       return ElevatedButton.icon(
         icon: const Icon(Icons.chrome_reader_mode),
@@ -445,7 +428,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       );
     }
   }
-  
+
   Future<void> _downloadZimFile(ZimCatalogItem item) async {
     // Show a snackbar to indicate download is starting
     ScaffoldMessenger.of(context).showSnackBar(
@@ -454,7 +437,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
-    
+
     // Subscribe to download progress
     final subscription = _downloadService
         .downloadZimFile(item)
@@ -463,14 +446,14 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
             _downloadStatus[item.id] = info;
           });
         });
-    
+
     _downloadSubscriptions[item.id] = subscription;
   }
 
   Future<void> _pauseResumeDownload(String zimId) async {
     final status = _downloadStatus[zimId];
     if (status == null) return;
-    
+
     if (status.status == DownloadStatus.inProgress) {
       await _downloadService.pauseDownload(zimId);
       // Update UI immediately
@@ -485,20 +468,20 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       });
     }
   }
-  
+
   Future<void> _cancelDownload(String zimId) async {
     // Cancel the download
     await _downloadService.cancelDownload(zimId);
-    
+
     // Cancel the subscription
     _downloadSubscriptions[zimId]?.cancel();
     _downloadSubscriptions.remove(zimId);
-    
+
     // Update state
     setState(() {
       _downloadStatus.remove(zimId);
     });
-    
+
     // Show confirmation
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -512,22 +495,22 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
     // Find the file path
     final filePath = _downloadStatus[item.id]?.filePath;
     if (filePath == null) return;
-    
+
     try {
       // Verify the file exists
       final file = File(filePath);
       if (!await file.exists()) {
         throw Exception('ZIM file not found at $filePath');
       }
-      
+
       // Show a loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Opening ZIM file...'), 
+          content: Text('Opening ZIM file...'),
           duration: Duration(seconds: 1),
         ),
       );
-      
+
       // Navigate to reader screen with file path
       if (mounted) {
         Navigator.of(context).push(
@@ -542,7 +525,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       );
     }
   }
-  
+
   List<DropdownMenuItem<String>> _buildLanguageItems() {
     return [
       const DropdownMenuItem<String>(
@@ -594,7 +577,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
     }
   }
-  
+
   String _formatNumber(int number) {
     if (number < 1000) {
       return number.toString();
@@ -604,7 +587,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       return '${(number / 1000000).toStringAsFixed(1)}M';
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -628,13 +611,13 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
               child: Row(
                 children: [
                   Icon(
-                    _isLoading ? Icons.sync : Icons.check_circle, 
+                    _isLoading ? Icons.sync : Icons.check_circle,
                     color: _isLoading ? Colors.blue : Colors.green
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _isLoading 
+                      _isLoading
                           ? 'Loading ZIM catalog...'
                           : 'ZIM catalog ready - ${_catalogItems.length} files available',
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -643,7 +626,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                 ],
               ),
             ),
-            
+
             // Filter controls
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -679,7 +662,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                 ],
               ),
             ),
-            
+
             // Error message
             if (_errorMessage.isNotEmpty)
               Container(
@@ -698,7 +681,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                   ],
                 ),
               ),
-            
+
             // Catalog listing
             Expanded(
               child: _isLoading
@@ -711,7 +694,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                               const Icon(Icons.warning, size: 48, color: Colors.amber),
                               const SizedBox(height: 16),
                               const Text(
-                                'No ZIM files found', 
+                                'No ZIM files found',
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
                               ),
                               const SizedBox(height: 8),
@@ -737,7 +720,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       ),
     );
   }
-  
+
   @override
   void dispose() {
     // Cancel all download subscriptions
@@ -745,7 +728,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       subscription.cancel();
     }
     _downloadSubscriptions.clear();
-    
+
     super.dispose();
   }
 }
