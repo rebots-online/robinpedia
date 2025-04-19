@@ -13,7 +13,7 @@ import '../utils/html_sanitizer.dart';
 class ZimReaderScreen extends StatefulWidget {
   /// Path to the ZIM file to open
   final String zimFilePath;
-  
+
   const ZimReaderScreen({super.key, required this.zimFilePath});
 
   @override
@@ -25,13 +25,13 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
   late final MemoryManager _memoryManager;
   ZimReader? _zimReader;
   late final HtmlSanitizer _htmlSanitizer;
-  
+
   // UI state
   bool _isLoading = true;
   bool _isInitialized = false;
   String _errorMessage = '';
   String? _loadingMessage;
-  
+
   // Navigation state
   List<ZimEntry> _currentEntries = [];
   ZimEntry? _currentEntry;
@@ -41,13 +41,13 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
   int _currentPage = 0;
   final int _entriesPerPage = 20;
   final List<ZimEntry> _navigationHistory = [];
-  
+
   // Search state
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   String? _lastSearchQuery;
   final List<ZimEntry> _searchResults = [];
-  
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +55,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
     _htmlSanitizer = HtmlSanitizer();
     _initializeReader();
   }
-  
+
   Future<void> _initializeReader() async {
     try {
       setState(() {
@@ -63,50 +63,50 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         _errorMessage = '';
         _loadingMessage = 'Verifying ZIM file...';
       });
-      
+
       // Verify file exists
       final file = File(widget.zimFilePath);
       if (!await file.exists()) {
         throw Exception('ZIM file not found at ${widget.zimFilePath}');
       }
-      
+
       setState(() {
         _loadingMessage = 'Initializing ZIM reader...';
       });
-      
+
       // Initialize ZIM reader
       _zimReader = ZimReader(widget.zimFilePath, _memoryManager);
       await _zimReader!.initialize();
-      
+
       setState(() {
         _loadingMessage = 'Loading metadata...';
       });
-      
+
       // Get total entry count
       _totalEntries = await _zimReader!.getEntryCount();
-      
+
       setState(() {
         _loadingMessage = 'Loading article entries...';
       });
-      
+
       // Load first page of entries
       await _loadEntries();
-      
+
       setState(() {
         _loadingMessage = 'Loading main page...';
       });
-      
+
       // Try to load main page (index.html or similar)
       await _loadMainPage();
-      
+
       setState(() {
         _isInitialized = true;
       });
-      
+
     } catch (e, stackTrace) {
       debugPrint('Error initializing ZIM reader: $e');
       debugPrint('Stack trace: $stackTrace');
-      
+
       setState(() {
         _errorMessage = 'Failed to open ZIM file: $e';
       });
@@ -117,22 +117,22 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
     }
   }
-  
+
   Future<void> _loadEntries({int? page}) async {
     try {
       setState(() {
         _isLoading = true;
       });
-      
+
       final pageToLoad = page ?? _currentPage;
       final startIndex = pageToLoad * _entriesPerPage;
-      
+
       // Get entries from reader
       final entries = await _zimReader!.getEntries(
-        startIndex, 
+        startIndex,
         _entriesPerPage.clamp(0, _totalEntries - startIndex)
       );
-      
+
       setState(() {
         _currentEntries = entries;
         _currentPage = pageToLoad;
@@ -145,7 +145,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
     }
   }
-  
+
   Future<void> _loadEntry(ZimEntry entry) async {
     if (!_isInitialized || _zimReader == null) {
       setState(() {
@@ -153,7 +153,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
       return;
     }
-    
+
     try {
       setState(() {
         _isLoading = true;
@@ -162,9 +162,9 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         _sanitizedContent = null;
         _loadingMessage = 'Loading article ${entry.title}...';
       });
-      
+
       // Add to navigation history
-      if (_currentEntry != null && _navigationHistory.isNotEmpty && 
+      if (_currentEntry != null && _navigationHistory.isNotEmpty &&
           _navigationHistory.last.url != _currentEntry!.url) {
         _navigationHistory.add(_currentEntry!);
       }
@@ -172,24 +172,24 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         // Limit history size
         _navigationHistory.removeAt(0);
       }
-      
+
       // Get content for the entry
       final content = await _zimReader!.getContentByUrl(entry.url);
-      
+
       // Apply HTML sanitization for security if this is HTML content
       String processedContent = content;
       if (entry.isArticle && content.isNotEmpty) {
         setState(() {
           _loadingMessage = 'Sanitizing content...';
         });
-        
+
         try {
           // Extract base URL for resolving relative links
           String baseUrl = 'zim://${entry.url}';
           if (entry.url.contains('/')) {
             baseUrl = 'zim://${entry.url.substring(0, entry.url.lastIndexOf('/'))}/';
           }
-          
+
           // Sanitize HTML content
           processedContent = _htmlSanitizer.sanitize(content, baseUrl: baseUrl);
         } catch (sanitizeError) {
@@ -204,7 +204,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
           ''';
         }
       }
-      
+
       setState(() {
         _currentContent = content; // Keep original content
         _sanitizedContent = processedContent; // Store sanitized version for display
@@ -214,7 +214,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
     } catch (e, stackTrace) {
       debugPrint('Error loading entry: $e');
       debugPrint('Stack trace: $stackTrace');
-      
+
       setState(() {
         _errorMessage = 'Failed to load content: $e';
         _isLoading = false;
@@ -222,7 +222,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
     }
   }
-  
+
   Future<void> _loadMainPage() async {
     if (!_isInitialized || _zimReader == null) {
       setState(() {
@@ -230,15 +230,15 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
       return;
     }
-    
+
     try {
       setState(() {
         _loadingMessage = 'Looking for main page...';
       });
-      
+
       // Clear navigation history when loading main page
       _navigationHistory.clear();
-      
+
       // Try multiple possible main page URLs in order of likelihood
       final potentialMainPages = [
         'A/index.html',
@@ -247,7 +247,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         'A/home.html',
         'A/Main_Page',
       ];
-      
+
       for (final url in potentialMainPages) {
         try {
           final content = await _zimReader!.getContentByUrl(url);
@@ -263,7 +263,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
               blobOffset: 0,
               blobSize: content.length,
             );
-            
+
             // Load the entry properly to ensure sanitization
             await _loadEntry(mainEntry);
             return;
@@ -273,13 +273,13 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
           // Continue to next potential page
         }
       }
-      
+
       // Try to find a welcome or main article
       try {
         setState(() {
           _loadingMessage = 'Searching for welcome article...';
         });
-        
+
         // Look for common article names
         final commonArticles = ['welcome', 'start', 'introduction', 'main'];
         for (final term in commonArticles) {
@@ -292,7 +292,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       } catch (searchError) {
         debugPrint('Error searching for welcome article: $searchError');
       }
-      
+
       // If all else fails, load the first entry
       if (_currentEntries.isNotEmpty) {
         await _loadEntry(_currentEntries.first);
@@ -303,18 +303,18 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
           await _loadEntry(_currentEntries.first);
         }
       }
-      
+
     } catch (e, stackTrace) {
       debugPrint('Error loading main page: $e');
       debugPrint('Stack trace: $stackTrace');
-      
+
       setState(() {
         _errorMessage = 'Failed to load main page: $e';
         _loadingMessage = null;
       });
     }
   }
-  
+
   Future<void> _search() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
@@ -324,17 +324,17 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
       return;
     }
-    
+
     setState(() {
       _isSearching = true;
       _isLoading = true;
     });
-    
+
     try {
       // In a real implementation, this would use proper search indexing
       // For now, we'll just filter the entries we have
       await _loadEntries(page: 0);
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -345,7 +345,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       });
     }
   }
-  
+
   Widget _buildEntryList() {
     return Column(
       children: [
@@ -369,7 +369,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             onSubmitted: (_) => _search(),
           ),
         ),
-        
+
         // Entry count
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -391,7 +391,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             ],
           ),
         ),
-        
+
         // Entry list
         Expanded(
           child: ListView.builder(
@@ -399,15 +399,15 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             itemBuilder: (context, index) {
               final entry = _currentEntries[index];
               final isSelected = _currentEntry?.url == entry.url;
-              
+
               return ListTile(
                 title: Text(entry.title ?? entry.url.split('/').last),
                 subtitle: Text(entry.url),
                 leading: Icon(
-                  entry.isArticle 
-                      ? Icons.article 
-                      : entry.isImage 
-                          ? Icons.image 
+                  entry.isArticle
+                      ? Icons.article
+                      : entry.isImage
+                          ? Icons.image
                           : Icons.insert_drive_file,
                 ),
                 selected: isSelected,
@@ -416,7 +416,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             },
           ),
         ),
-        
+
         // Pagination
         if (_totalEntries > _entriesPerPage)
           Padding(
@@ -443,7 +443,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       ],
     );
   }
-  
+
   Widget _buildContentView() {
     // Show loading indicator with message if applicable
     if (_isLoading) {
@@ -459,7 +459,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         ),
       );
     }
-    
+
     // Show message if no entry is selected
     if (_currentEntry == null) {
       return Center(
@@ -479,7 +479,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
         ),
       );
     }
-    
+
     // Handle different content types
     if (_currentEntry!.isImage) {
       // For image content
@@ -518,7 +518,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    _currentEntry!.title,
+                    _currentEntry!.title ?? 'Untitled',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -547,7 +547,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
           child: Text('No content available'),
         );
       }
-      
+
       return Stack(
         children: [
           // Content view
@@ -577,12 +577,12 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                 },
                 onLinkTap: (url, _, __, ___) {
                   if (url == null) return;
-                  
+
                   // Handle internal links
                   if (url.startsWith('A/') || url.startsWith('/')) {
                     // Normalize URL
                     final normalizedUrl = url.startsWith('/') ? 'A$url' : url;
-                    
+
                     // Create a temporary entry to load
                     final linkEntry = ZimEntry(
                       url: normalizedUrl,
@@ -595,7 +595,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                       blobOffset: -1,
                       blobSize: -1,
                     );
-                    
+
                     _loadEntry(linkEntry);
                   } else if (url.startsWith('http://') || url.startsWith('https://')) {
                     // Handle external links
@@ -629,7 +629,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
               ),
             ),
           ),
-          
+
           // Navigation history back button (only if we have history)
           if (_navigationHistory.isNotEmpty)
             Positioned(
@@ -679,19 +679,19 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
       );
     }
   }
-  
+
   @override
   void dispose() {
     // Clean up resources to prevent memory leaks
     _searchController.dispose();
     _zimReader?.dispose();
     _memoryManager.dispose();
-    
+
     // Clear state
     _currentEntries.clear();
     _navigationHistory.clear();
     _searchResults.clear();
-    
+
     super.dispose();
   }
 
@@ -718,7 +718,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             },
             tooltip: 'Home Page',
           ),
-          
+
           // Search button
           IconButton(
             icon: const Icon(Icons.search),
@@ -757,14 +757,14 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             },
             tooltip: 'Search',
           ),
-          
+
           // Refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _initializeReader,
             tooltip: 'Reload',
           ),
-          
+
           // Annotation button (when an entry is loaded)
           if (_currentEntry != null)
             IconButton(
@@ -778,7 +778,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
               },
               tooltip: 'Annotate',
             ),
-            
+
           // Menu button
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -924,14 +924,14 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                           : MediaQuery.of(context).size.width * 0.25,
                       child: _buildEntryList(),
                     ),
-                    
+
                     // Divider
                     VerticalDivider(
                       width: 1,
                       thickness: 1,
                       color: Theme.of(context).dividerColor,
                     ),
-                    
+
                     // Content view (3/4 of screen)
                     Expanded(
                       flex: 3,

@@ -29,6 +29,7 @@ dependencies:
   flame: ^1.16.0    # For advanced canvas operations in annotations
   vector_math: ^2.1.4 # For mathematical operations in the annotation system
   # file_picker: ^5.3.0  # For selecting ZIM files in the debug interface (temporarily disabled)
+  js: ^0.6.5       # For JavaScript interop in web implementation
 
 dev_dependencies:
   flutter_test:
@@ -47,7 +48,7 @@ dependency_overrides:
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/images/
     - assets/icons/

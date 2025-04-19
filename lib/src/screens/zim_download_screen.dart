@@ -9,7 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/zim_catalog_item.dart';
 import '../models/download_info.dart';
 import '../services/zim_catalog_service.dart';
-import '../services/zim_download_service.dart';
+import '../services/zim_download_service.dart' hide DownloadInfo, DownloadStatus;
 import 'zim_reader_screen.dart';
 
 /// Screen for browsing and downloading ZIM files

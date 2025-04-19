@@ -1,98 +1,77 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'package:flutter/foundation.dart';
-import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html_parser;
 
-/// HTML Sanitizer to remove potentially unsafe elements and attributes
-///
-/// This implementation delivers security by:
-/// 1. Whitelisting only safe HTML tags
-/// 2. Filtering attributes to prevent XSS attacks
-/// 3. Sanitizing URLs to prevent javascript execution
-/// 4. Preserving essential formatting for readability
+/// HTML sanitizer for cleaning up HTML content
 class HtmlSanitizer {
-  /// Whitelist of allowed HTML tags
-  static const Set<String> _allowedTags = {
-    // Text formatting
-    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'strong', 'em', 'b', 'i', 'u', 'span', 'sup', 'sub',
-    'blockquote', 'code', 'pre',
+  /// List of allowed HTML tags
+  final List<String> _allowedTags = [
+    'a', 'abbr', 'address', 'article', 'aside', 'b', 'blockquote', 'br',
+    'caption', 'cite', 'code', 'col', 'colgroup', 'dd', 'del', 'details',
+    'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'footer', 'h1', 'h2',
+    'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'i', 'img', 'ins', 'kbd', 'li',
+    'main', 'mark', 'nav', 'ol', 'p', 'pre', 'q', 's', 'section', 'small',
+    'span', 'strong', 'sub', 'summary', 'sup', 'table', 'tbody', 'td',
+    'tfoot', 'th', 'thead', 'time', 'tr', 'u', 'ul', 'var', 'wbr'
+  ];
 
-    // Lists and tables
-    'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  /// List of allowed HTML attributes
+  final List<String> _allowedAttrs = [
+    'href', 'src', 'alt', 'title', 'class', 'id', 'name', 'rel', 'target',
+    'style', 'width', 'height', 'colspan', 'rowspan', 'border', 'cellpadding',
+    'cellspacing', 'align', 'valign', 'dir', 'lang', 'abbr', 'cite', 'datetime',
+    'download', 'headers', 'scope', 'start', 'type', 'value', 'reversed',
+    'data-*'
+  ];
 
-    // Structure
-    'div', 'section', 'article', 'header', 'footer',
+  /// List of allowed CSS properties
+  final List<String> _allowedStyles = [
+    'background', 'background-color', 'border', 'border-bottom', 'border-bottom-color',
+    'border-bottom-style', 'border-bottom-width', 'border-color', 'border-left',
+    'border-left-color', 'border-left-style', 'border-left-width', 'border-right',
+    'border-right-color', 'border-right-style', 'border-right-width', 'border-style',
+    'border-top', 'border-top-color', 'border-top-style', 'border-top-width',
+    'border-width', 'color', 'display', 'font', 'font-family', 'font-size',
+    'font-style', 'font-variant', 'font-weight', 'height', 'letter-spacing',
+    'line-height', 'margin', 'margin-bottom', 'margin-left', 'margin-right',
+    'margin-top', 'padding', 'padding-bottom', 'padding-left', 'padding-right',
+    'padding-top', 'text-align', 'text-decoration', 'text-indent', 'text-transform',
+    'vertical-align', 'white-space', 'width', 'word-spacing'
+  ];
 
-    // Links and media
-    'a', 'img', 'audio', 'video', 'source',
-
-    // Other allowed elements
-    'br', 'hr',
-  };
-
-  /// Whitelist of allowed attributes for any tag
-  static const Set<String> _globalAllowedAttributes = {
-    'id', 'class', 'style', 'title', 'lang', 'dir',
-    'tabindex', 'role', 'aria-label', 'aria-hidden',
-  };
-
-  /// Whitelist of allowed attributes for specific tags
-  static final Map<String, Set<String>> _tagSpecificAllowedAttributes = {
-    'a': {'href', 'target', 'rel', 'download'},
-    'img': {'src', 'alt', 'width', 'height', 'loading'},
-    'audio': {'src', 'controls', 'autoplay', 'preload'},
-    'video': {'src', 'controls', 'autoplay', 'preload', 'poster', 'width', 'height'},
-    'source': {'src', 'type'},
-    'table': {'border', 'cellpadding', 'cellspacing', 'width'},
-    'th': {'colspan', 'rowspan', 'scope', 'width'},
-    'td': {'colspan', 'rowspan', 'width'},
-  };
-
-  /// CSS properties that may contain JavaScript or other unsafe content
-  static const Set<String> _unsafeCssProperties = {
-    'expression', 'behavior', 'binding', 'include-source',
-    '-moz-binding', 'javascript', 'vbscript', 'mocha', 'livescript',
-  };
-
-  /// Protocols for URLs that are considered safe
-  static const Set<String> _safeUrlProtocols = {
-    'http', 'https', 'mailto', 'tel', 'ftp', 'data',
-  };
+  /// List of safe URL protocols
+  final List<String> _safeUrlProtocols = [
+    'http', 'https', 'mailto', 'tel', 'ftp'
+  ];
 
   /// Sanitize HTML content
   ///
-  /// This method parses HTML, removes unsafe elements and attributes,
-  /// and returns sanitized HTML as a string.
-  ///
   /// @param html The HTML content to sanitize
   /// @param baseUrl Optional base URL for resolving relative links
-  /// @return Sanitized HTML string
+  /// @return Sanitized HTML
   String sanitize(String html, {String? baseUrl}) {
     try {
       // Parse the HTML
       var document = html_parser.parse(html);
 
-      // Process the document
+      // Sanitize the document
       _sanitizeNode(document.body!, baseUrl: baseUrl);
 
       // Return the sanitized HTML
       return document.body!.innerHtml;
     } catch (e) {
       debugPrint('Error sanitizing HTML: $e');
-      // Return a safe fallback for invalid HTML
-      return '<p>Error sanitizing content: ${e.toString()}</p>';
+      return '';
     }
   }
 
-  /// Sanitize a node and its children recursively
+  /// Sanitize a DOM node recursively
   ///
   /// @param node The node to sanitize
   /// @param baseUrl Optional base URL for resolving relative links
   void _sanitizeNode(dom.Node node, {String? baseUrl}) {
-    // If this is not an element, no need to sanitize
     if (node.nodeType != dom.Node.ELEMENT_NODE) {
       return;
     }
@@ -100,48 +79,22 @@ class HtmlSanitizer {
     var element = node as dom.Element;
     var nodeName = element.localName?.toLowerCase() ?? '';
 
-    // Check if this tag is allowed
+    // Check if the tag is allowed
     if (!_allowedTags.contains(nodeName)) {
-      // Replace disallowed tags with their content
-      var childNodes = List<dom.Node>.from(element.nodes);
-      for (var child in childNodes) {
-        element.parent?.insertBefore(child, element);
-      }
-      element.remove();
+      // Replace with its text content
+      var text = element.text;
+      var textNode = dom.Text(text);
+      element.replaceWith(textNode);
       return;
-    }
-
-    // Filter attributes
-    _filterAttributes(element, baseUrl: baseUrl);
-
-    // Process children recursively - we need to create a copy of the list because
-    // it might be modified during iteration
-    var childNodes = List<dom.Node>.from(element.nodes);
-    for (var child in childNodes) {
-      _sanitizeNode(child, baseUrl: baseUrl);
-    }
-  }
-
-  /// Filter attributes of an element
-  ///
-  /// @param element The element to filter attributes for
-  /// @param baseUrl Optional base URL for resolving relative links
-  void _filterAttributes(dom.Element element, {String? baseUrl}) {
-    var nodeName = element.localName?.toLowerCase() ?? '';
-
-    // Get allowed attributes for this tag
-    var allowedAttrs = {..._globalAllowedAttributes};
-    if (_tagSpecificAllowedAttributes.containsKey(nodeName)) {
-      allowedAttrs.addAll(_tagSpecificAllowedAttributes[nodeName]!);
     }
 
     // Check each attribute
     var attributesToRemove = <String>[];
-    element.attributes.forEach((String name, String value) {
+    element.attributes.forEach((name, value) {
       var lowerName = name.toLowerCase();
 
       // Check if the attribute is allowed
-      if (!allowedAttrs.contains(lowerName)) {
+      if (!_allowedAttrs.contains(lowerName)) {
         attributesToRemove.add(name);
         return;
       }
@@ -162,116 +115,92 @@ class HtmlSanitizer {
           element.attributes[name] = sanitizedUrl;
         }
       } else if (lowerName == 'target' && nodeName == 'a') {
-        // Only allow _blank target for links
-        if (value.toLowerCase() != '_blank') {
-          element.attributes[name] = '_blank';
+        // Only allow _blank, _self, _parent, _top for target
+        if (value != '_blank' && value != '_self' &&
+            value != '_parent' && value != '_top') {
+          element.attributes[name] = '_self';
         }
-
-        // Add rel="noopener noreferrer" for security
-        element.attributes['rel'] = 'noopener noreferrer';
       }
     });
 
     // Remove disallowed attributes
-    for (var name in attributesToRemove) {
-      element.attributes.remove(name);
+    for (var attr in attributesToRemove) {
+      element.attributes.remove(attr);
+    }
+
+    // Process children
+    var children = element.nodes.toList();
+    for (var child in children) {
+      _sanitizeNode(child, baseUrl: baseUrl);
     }
   }
 
-  /// Sanitize CSS style attribute
+  /// Sanitize a CSS style string
   ///
-  /// @param style The style attribute value to sanitize
-  /// @return Sanitized style string
+  /// @param style The CSS style string to sanitize
+  /// @return Sanitized CSS style string
   String _sanitizeStyle(String style) {
-    // Split into individual style declarations
+    var sanitizedParts = <String>[];
+
+    // Split into individual property declarations
     var declarations = style.split(';');
-    var sanitizedDeclarations = <String>[];
 
     for (var declaration in declarations) {
       var parts = declaration.split(':');
-      if (parts.length < 2) continue;
+      if (parts.length != 2) continue;
 
       var property = parts[0].trim().toLowerCase();
-      var value = parts.sublist(1).join(':').trim();
+      var value = parts[1].trim();
 
-      // Check for unsafe properties
-      bool isUnsafe = false;
-      for (var unsafeProperty in _unsafeCssProperties) {
-        if (property.contains(unsafeProperty)) {
-          isUnsafe = true;
-          break;
+      // Check if the property is allowed
+      if (_allowedStyles.contains(property)) {
+        // For URL values, check if they're safe
+        if (value.contains('url(') && !_isSafeUrl(value)) {
+          continue;
         }
-      }
 
-      // Check for unsafe values (e.g. url(), expression())
-      if (value.toLowerCase().contains('javascript:') ||
-          value.toLowerCase().contains('expression(') ||
-          value.toLowerCase().contains('url(') && !_isSafeUrl(value)) {
-        isUnsafe = true;
-      }
-
-      if (!isUnsafe) {
-        sanitizedDeclarations.add('$property: $value');
+        sanitizedParts.add('$property: $value');
       }
     }
 
-    return sanitizedDeclarations.join('; ');
+    return sanitizedParts.join('; ');
   }
 
   /// Sanitize a URL
   ///
   /// @param url The URL to sanitize
   /// @param baseUrl Optional base URL for resolving relative links
-  /// @return Sanitized URL string
+  /// @return Sanitized URL
   String _sanitizeUrl(String url, {String? baseUrl}) {
-    url = url.trim();
-
-    // Skip empty URLs
-    if (url.isEmpty) {
+    // Check for JavaScript URLs
+    if (url.trim().toLowerCase().startsWith('javascript:')) {
       return '';
     }
 
-    // Handle relative URLs if a base URL is provided
-    if (url.startsWith('./') || url.startsWith('../') || !url.contains(':')) {
-      if (baseUrl != null && baseUrl.isNotEmpty) {
-        // Simple resolution of relative URLs (this is a basic implementation)
-        if (url.startsWith('/')) {
-          // Absolute path relative to domain
-          var domain = Uri.parse(baseUrl).origin;
-          return '$domain$url';
-        } else {
-          // Relative path
-          var base = baseUrl;
-          if (!base.endsWith('/')) {
-            // Remove filename from base if it doesn't end with /
-            base = base.substring(0, base.lastIndexOf('/') + 1);
-          }
-          return '$base$url';
-        }
+    // Check for data URLs (only allow images)
+    if (url.trim().toLowerCase().startsWith('data:')) {
+      if (!url.trim().toLowerCase().startsWith('data:image/')) {
+        return '';
       }
-      // If no base URL, just return the relative URL as is
-      return url;
     }
 
     // Check for safe protocols
-    Uri? uri;
-    try {
-      uri = Uri.parse(url);
-    } catch (e) {
-      return '';
-    }
-
-    var protocol = uri.scheme.toLowerCase();
-    if (!_safeUrlProtocols.contains(protocol)) {
-      return '';
-    }
-
-    // Special handling for data: URLs
-    if (protocol == 'data') {
-      // Only allow image data URLs
-      if (!url.startsWith('data:image/')) {
-        return '';
+    var hasProtocol = false;
+    for (var protocol in _safeUrlProtocols) {
+      if (url.trim().toLowerCase().startsWith('$protocol:')) {
+        hasProtocol = true;
+        break;
       }
+    }
+
+    // If it's a relative URL and we have a base URL, resolve it
+    if (!hasProtocol && !url.startsWith('data:') && baseUrl != null) {
+      return _resolveRelativeUrl(url, baseUrl);
+    }
+
+    // If it has a protocol and it's not safe, reject it
+    if (url.contains(':') && !hasProtocol && !url.startsWith('data:image/')) {
+      return '';
     }
 
     return url;
@@ -283,7 +212,7 @@ class HtmlSanitizer {
   /// @return True if the URL is safe, false otherwise
   bool _isSafeUrl(String urlValue) {
     // Extract the URL from url(...)
-    var regex = RegExp(r'url\s*\(\s*["\']?(.*?)["\']?\s*\)');
+    var regex = RegExp(r'url\s*\(\s*[\'"]?(.*?)[\'"]?\s*\)');
     var match = regex.firstMatch(urlValue);
 
     var url = match?.group(1) ?? '';

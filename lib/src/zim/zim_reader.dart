@@ -165,6 +165,48 @@ class ZimReader {
     return paths[id % paths.length];
   }
 
+  /// Search for entries matching a query
+  ///
+  /// @param query The search query
+  /// @param limit Maximum number of results to return
+  /// @return List of matching entries
+  Future<List<ZimEntry>> searchEntries(String query, {int limit = 10}) async {
+    if (!_initialized) throw Exception('ZimReader not initialized');
+
+    // For now, implement a simple search on cached entries
+    // In the future, this will use the ZIM file's full-text index
+    final results = <ZimEntry>[];
+    final lowerQuery = query.toLowerCase();
+
+    // First try to search in the cache
+    for (final entry in _entryCache.values) {
+      if (entry.title?.toLowerCase().contains(lowerQuery) == true ||
+          entry.url.toLowerCase().contains(lowerQuery)) {
+        results.add(entry);
+        if (results.length >= limit) break;
+      }
+    }
+
+    // If we don't have enough results, fetch more entries
+    if (results.length < limit) {
+      // Get some entries to search through
+      final entries = await getEntries(0, 100);
+
+      for (final entry in entries) {
+        // Skip entries we've already found
+        if (results.contains(entry)) continue;
+
+        if (entry.title?.toLowerCase().contains(lowerQuery) == true ||
+            entry.url.toLowerCase().contains(lowerQuery)) {
+          results.add(entry);
+          if (results.length >= limit) break;
+        }
+      }
+    }
+
+    return results;
+  }
+
   /// Get content by URL from the ZIM file
   ///
   /// This method extracts content from the ZIM file based on the provided URL.

@@ -182,7 +182,7 @@ class ContentExtractor {
   final EnhancedClusterManager? _clusterManager;
 
   /// Create a content extractor
-  ContentExtractor({required this.memoryManager, this._clusterManager}) {
+  ContentExtractor({required this.memoryManager, EnhancedClusterManager? clusterManager}) : _clusterManager = clusterManager {
     _registerTypeHandlers();
     _fallbackHandler = _typeHandlers['application/octet-stream']!;
     _htmlHandler = _typeHandlers['text/html'] as HtmlContentHandler;
