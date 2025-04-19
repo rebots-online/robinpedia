@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/zim_catalog_item.dart';
+import '../models/download_info.dart';
 import '../services/zim_catalog_service.dart';
 import '../services/zim_download_service.dart';
 import 'zim_reader_screen.dart';
@@ -130,7 +131,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         // Also load/refresh local downloaded files status
         for (final item in _catalogItems) {
           if (_downloadStatus.containsKey(item.id) &&
-              _downloadStatus[item.id]!.status == DownloadStatus.completed) {
+              _downloadStatus[item.id]!.status == DownloadStatus.complete) {
             // Keep the status for completed downloads
             continue;
           }
@@ -458,13 +459,23 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
       await _downloadService.pauseDownload(zimId);
       // Update UI immediately
       setState(() {
-        _downloadStatus[zimId] = status.copyWith(status: DownloadStatus.paused);
+        _downloadStatus[zimId] = DownloadInfo(
+          zimId: zimId,
+          progress: status.progress,
+          status: DownloadStatus.paused,
+          filePath: status.filePath,
+        );
       });
     } else if (status.status == DownloadStatus.paused) {
       await _downloadService.resumeDownload(zimId);
       // Update UI immediately
       setState(() {
-        _downloadStatus[zimId] = status.copyWith(status: DownloadStatus.inProgress);
+        _downloadStatus[zimId] = DownloadInfo(
+          zimId: zimId,
+          progress: status.progress,
+          status: DownloadStatus.inProgress,
+          filePath: status.filePath,
+        );
       });
     }
   }

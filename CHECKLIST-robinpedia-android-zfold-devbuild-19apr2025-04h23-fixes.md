@@ -24,11 +24,11 @@
 - [x] Fix LZMA decompression in lzma_decompression.dart <!-- Completed 19 Apr 2025, 04:30 EDT -->
 
 ### Secondary Issues
-- [/] Correct constructor arguments for DownloadInfo in zim_download_screen.dart
-- [/] Implement or remove getFilePathForZim usage in zim_download_screen.dart
-- [/] Define _sanitizer and _clusterManager in content_extractor.dart or correct their usage
-- [/] Fix type mismatches and ensure all method signatures are correct
-- [/] Resolve FFI/type argument issues in abstract_ffi_binding.dart
+- [x] Correct constructor arguments for DownloadInfo in zim_download_screen.dart <!-- Completed 19 Apr 2025, 05:45 EDT -->
+- [x] Implement or remove getFilePathForZim usage in zim_download_screen.dart <!-- Completed 19 Apr 2025, 05:50 EDT -->
+- [x] Define _sanitizer and _clusterManager in content_extractor.dart or correct their usage <!-- Completed 19 Apr 2025, 05:55 EDT -->
+- [x] Fix type mismatches and ensure all method signatures are correct <!-- Completed 19 Apr 2025, 06:00 EDT -->
+- [x] Resolve FFI/type argument issues in abstract_ffi_binding.dart <!-- Completed 19 Apr 2025, 06:05 EDT -->
 
 ### Additional Issues (Found During Build)
 - [x] Fix regex and syntax errors in html_sanitizer.dart (line 286) <!-- Completed 19 Apr 2025, 04:50 EDT -->
