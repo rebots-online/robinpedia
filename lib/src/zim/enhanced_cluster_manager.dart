@@ -129,7 +129,7 @@ class EnhancedClusterManager {
   final LzmaDecompressionService _decompressionService;
 
   /// Memory manager for efficient buffer handling
-  final MemoryManager _memoryManager = MemoryManager();
+  final MemoryManager _memoryManager;
 
   /// LRU cache for clusters
   final LinkedHashMap<int, Cluster> _clusterCache = LinkedHashMap();
@@ -186,6 +186,7 @@ class EnhancedClusterManager {
     bool enablePrefetching = true,
   }) :
     _file = file,
+    _memoryManager = memoryManager,
     _clusterOffsets = _initializeClusterOffsets(file, clusterCount, clusterPtrPos),
     _maxCacheSize = maxCacheSize,
     _prefetchingEnabled = enablePrefetching,

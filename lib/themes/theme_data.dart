@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 enum ThemeStyle {
-  brutalist,
-  skeuomorphic,
+  brutalistLight,
+  brutalistDark,
+  skeuomorphicLight,
+  skeuomorphicDark,
   neumorphic,
   glassmorphic,
   material3,
@@ -500,7 +502,7 @@ class _RetroTextState extends State<RetroText> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    
+
     if (widget.animate) {
       _startTypingAnimation();
     } else {

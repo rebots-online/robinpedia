@@ -1,14 +1,13 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:math' as math;
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
 import '../utils/memory_manager.dart';
-import '../ffi/bindings/lzma_binding.dart';
+import '../ffi/ffi_bindings.dart';
 import 'enhanced_cluster_manager.dart';
 import 'content_extractor.dart';
 import 'zim_entry.dart';
@@ -257,43 +256,7 @@ class ZimReader {
 
       // Throw the error instead of falling back to placeholder content
       // This will allow the UI to handle the error appropriately
-      throw e;
-    }
-  }
-
-  /// Temporarily provides sample content while actual implementation is in progress
-  /// This will be removed once the actual implementation is complete
-  String _getSampleContent(String url) {
-    if (url.endsWith('.html')) {
-      return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Sample ZIM Article</title>
-  <meta charset="utf-8">
-</head>
-<body>
-  <h1>Sample Article: ${url.split('/').last}</h1>
-  <p>This is a sample article content for debugging the ZIM reader.</p>
-  <p>URL: $url</p>
-  <h2>Core ZIM Reader Components:</h2>
-  <ul>
-    <li>Memory Manager: Efficient buffer management with pooling</li>
-    <li>LZMA2 Decompression: Fast decompression of ZIM clusters</li>
-    <li>Cluster Management: LRU caching and prefetching</li>
-    <li>Content Extraction: MIME type handling and preprocessing</li>
-  </ul>
-  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu justo id magna
-  dignissim facilisis. Duis vulputate nulla at lectus finibus, vel tincidunt tellus
-  fermentum. Nulla facilisi. Fusce tincidunt risus nec nunc finibus, vel tincidunt
-  tellus fermentum.</p>
-</body>
-</html>
-''';
-    } else if (url.endsWith('.jpg')) {
-      return '[Binary JPEG image data - ${url.split('/').last}]';
-    } else {
-      return 'Content for $url';
+      rethrow;
     }
   }
 

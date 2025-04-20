@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -108,7 +109,17 @@ class ZimDownloadService {
 
     try {
       // Get application documents directory for storing ZIM files
-      final appDocDir = await getApplicationDocumentsDirectory();
+      Directory appDocDir;
+
+      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+        // For desktop platforms, use the application documents directory
+        appDocDir = await getApplicationDocumentsDirectory();
+      } else {
+        // For mobile platforms, use the external storage directory if available
+        appDocDir = await getApplicationDocumentsDirectory();
+      }
+
+      debugPrint('Using base directory: ${appDocDir.path}');
       final zimDir = Directory(path.join(appDocDir.path, 'zim_files'));
 
       // Create directory if it doesn't exist
@@ -116,9 +127,22 @@ class ZimDownloadService {
         await zimDir.create(recursive: true);
       }
 
+      // Verify the directory is writable
+      try {
+        final testFile = File(path.join(zimDir.path, 'test_write.tmp'));
+        await testFile.writeAsString('test');
+        await testFile.delete();
+        debugPrint('Directory is writable: ${zimDir.path}');
+      } catch (e) {
+        debugPrint('Directory is not writable: ${zimDir.path}, error: $e');
+        throw Exception('Directory is not writable: ${zimDir.path}');
+      }
+
       _baseDir = zimDir;
       _initialized = true;
+      debugPrint('ZimDownloadService initialized with directory: ${_baseDir.path}');
     } catch (e) {
+      debugPrint('Failed to initialize ZimDownloadService: $e');
       throw Exception('Failed to initialize ZimDownloadService: $e');
     }
   }
@@ -226,29 +250,50 @@ class ZimDownloadService {
     _activeDownloads[zimId] = true;
 
     try {
+      debugPrint('Starting download for ZIM file: ${item.id}');
+      debugPrint('Temp file path: ${tempFile.path}');
+      debugPrint('Target file path: ${targetFile.path}');
+
       // Update status to in progress
+      final initialBytes = await _getInitialDownloadedBytes(tempFile);
+      debugPrint('Initial downloaded bytes: $initialBytes');
+
       _updateDownloadStatus(
         zimId,
         DownloadStatus.inProgress,
-        downloadedBytes: await _getInitialDownloadedBytes(tempFile),
+        downloadedBytes: initialBytes,
       );
 
       // Select download URL (use first one for now)
       final downloadUrl = item.downloadUrls.first;
+      debugPrint('Download URL: $downloadUrl');
 
       // Get total size and resume position
       int downloadedBytes = 0;
       if (await tempFile.exists()) {
         downloadedBytes = await tempFile.length();
+        debugPrint('Resuming download from $downloadedBytes bytes');
       } else {
+        debugPrint('Creating new temp file');
+        // Ensure parent directory exists
+        final parent = tempFile.parent;
+        if (!await parent.exists()) {
+          await parent.create(recursive: true);
+        }
         await tempFile.create(recursive: true);
       }
 
       // Create HTTP request with range header for resuming download
+      debugPrint('Creating HTTP request');
       final request = http.Request('GET', Uri.parse(downloadUrl));
-      request.headers['Range'] = 'bytes=$downloadedBytes-';
+      if (downloadedBytes > 0) {
+        request.headers['Range'] = 'bytes=$downloadedBytes-';
+        debugPrint('Added Range header: bytes=$downloadedBytes-');
+      }
 
+      debugPrint('Sending HTTP request');
       final response = await _client.send(request);
+      debugPrint('HTTP response status code: ${response.statusCode}');
 
       if (response.statusCode != 206 && response.statusCode != 200) {
         throw Exception('Failed to download ZIM file: ${response.statusCode}');
@@ -258,6 +303,7 @@ class ZimDownloadService {
       final totalBytes = response.contentLength != null
           ? downloadedBytes + response.contentLength!
           : item.size;
+      debugPrint('Total bytes: $totalBytes');
 
       _updateDownloadStatus(
         zimId,
@@ -267,6 +313,7 @@ class ZimDownloadService {
       );
 
       // Open file for writing
+      debugPrint('Opening file for writing: ${tempFile.path}');
       final sink = tempFile.openWrite(mode: FileMode.append);
 
       // Stream download data
@@ -284,37 +331,63 @@ class ZimDownloadService {
         }
       });
 
+      debugPrint('Starting to stream download data');
       response.stream.listen(
         (data) {
           if (_activeDownloads[zimId] == true) {
-            sink.add(data);
-            downloadedBytes += data.length;
+            try {
+              sink.add(data);
+              downloadedBytes += data.length;
+              if (downloadedBytes % (1024 * 1024) == 0) { // Log every 1MB
+                debugPrint('Downloaded $downloadedBytes bytes of $totalBytes');
+              }
+            } catch (e) {
+              debugPrint('Error writing to file: $e');
+              _activeDownloads[zimId] = false;
+              sink.close();
+              timer.cancel();
+              completer.completeError(e);
+            }
           } else {
             // Download was paused or cancelled
+            debugPrint('Download paused or cancelled');
             sink.close();
             timer.cancel();
             completer.complete();
           }
         },
         onDone: () async {
+          debugPrint('Download stream completed');
           await sink.close();
           timer.cancel();
 
           if (_activeDownloads[zimId] == true) {
-            // Rename temp file to final file
-            await tempFile.rename(targetFile.path);
+            try {
+              // Rename temp file to final file
+              debugPrint('Renaming temp file to final file');
+              await tempFile.rename(targetFile.path);
 
-            _updateDownloadStatus(
-              zimId,
-              DownloadStatus.completed,
-              downloadedBytes: totalBytes,
-              filePath: targetFile.path,
-            );
+              _updateDownloadStatus(
+                zimId,
+                DownloadStatus.completed,
+                downloadedBytes: totalBytes,
+                filePath: targetFile.path,
+              );
+              debugPrint('Download completed successfully');
+            } catch (e) {
+              debugPrint('Error finalizing download: $e');
+              _updateDownloadStatus(
+                zimId,
+                DownloadStatus.failed,
+                error: 'Error finalizing download: $e',
+              );
+            }
           }
 
           completer.complete();
         },
         onError: (error) {
+          debugPrint('Error in download stream: $error');
           sink.close();
           timer.cancel();
 
@@ -330,7 +403,9 @@ class ZimDownloadService {
       );
 
       await completer.future;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error in download process: $e');
+      debugPrint('Stack trace: $stackTrace');
       _updateDownloadStatus(
         zimId,
         DownloadStatus.failed,

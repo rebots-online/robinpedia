@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/robin/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/robin/CascadeProjects/robinpedia/android/app/.cxx/RelWithDebInfo/1va6v491/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/robin/CascadeProjects/robinpedia/android/app/.cxx/RelWithDebInfo/1va6v491/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

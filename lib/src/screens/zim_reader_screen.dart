@@ -4,7 +4,9 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import '../zim/zim_reader.dart';
+import 'package:flutter_html/src/style/padding.dart';
+import 'package:flutter_html/src/style/margin.dart';
+import '../zim/zim_reader_platform.dart';
 import '../zim/zim_entry.dart';
 import '../utils/memory_manager.dart';
 import '../utils/html_sanitizer.dart';
@@ -559,8 +561,8 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                 style: {
                   'body': Style(
                     fontSize: FontSize(16),
-                    padding: EdgeInsets.zero,
-                    margin: EdgeInsets.zero,
+                    padding: HtmlPaddings.zero,
+                    margin: Margins.zero,
                   ),
                   'h1': Style(fontSize: FontSize(24), fontWeight: FontWeight.bold),
                   'h2': Style(fontSize: FontSize(22), fontWeight: FontWeight.bold),
@@ -575,7 +577,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
                   'th': Style(padding: HtmlPaddings.all(8), backgroundColor: Colors.grey[200]),
                   'td': Style(padding: HtmlPaddings.all(8)),
                 },
-                onLinkTap: (url, _, __, ___) {
+                onLinkTap: (String? url, _, __) {
                   if (url == null) return;
 
                   // Handle internal links
@@ -664,7 +666,7 @@ class _ZimReaderScreenState extends State<ZimReaderScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _currentEntry!.title,
+                _currentEntry!.title ?? _currentEntry!.url.split('/').last,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),

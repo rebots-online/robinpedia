@@ -15,7 +15,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
   bool _isLoading = false;
   String? _selectedLanguage;
   String? _selectedCategory;
-  
+
   // Sample data
   final List<Map<String, dynamic>> _catalogItems = [
     {
@@ -55,25 +55,25 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
       'articleCount': 30000,
     },
   ];
-  
+
   final _languages = [
     {'code': 'eng', 'name': 'English', 'count': '42'},
     {'code': 'fra', 'name': 'French', 'count': '28'},
     {'code': 'spa', 'name': 'Spanish', 'count': '31'},
     {'code': 'deu', 'name': 'German', 'count': '24'},
   ];
-  
+
   final _categories = [
     {'id': 'wikipedia', 'name': 'Wikipedia', 'count': '120'},
     {'id': 'wiktionary', 'name': 'Wiktionary', 'count': '45'},
     {'id': 'wikivoyage', 'name': 'Wikivoyage', 'count': '25'},
     {'id': 'other', 'name': 'Other', 'count': '62'},
   ];
-  
+
   // Track which items are "downloaded"
   final Map<String, bool> _downloadedItems = {};
   final Map<String, double> _downloadProgress = {};
-  
+
   @override
   Widget build(BuildContext context) {
     final filteredItems = _catalogItems.where((item) {
@@ -85,7 +85,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
       }
       return true;
     }).toList();
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Robinpedia ZIM Manager'),
@@ -107,13 +107,13 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
               child: Row(
                 children: [
                   Icon(
-                    _isLoading ? Icons.sync : Icons.check_circle, 
+                    _isLoading ? Icons.sync : Icons.check_circle,
                     color: _isLoading ? Colors.blue : Colors.green
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _isLoading 
+                      _isLoading
                           ? 'Loading ZIM catalog...'
                           : 'ZIM catalog ready - ${filteredItems.length} files available',
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -122,7 +122,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                 ],
               ),
             ),
-            
+
             // Filter controls
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -176,7 +176,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                 ],
               ),
             ),
-            
+
             // Catalog listing
             Expanded(
               child: _isLoading
@@ -192,7 +192,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                             final id = item['id'];
                             final isDownloaded = _downloadedItems[id] == true;
                             final progress = _downloadProgress[id] ?? 0.0;
-                            
+
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                               elevation: isDownloaded ? 4 : 1,
@@ -212,7 +212,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                               Text(
                                                 item['name'],
                                                 style: const TextStyle(
-                                                  fontWeight: FontWeight.bold, 
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 16
                                                 ),
                                               ),
@@ -222,17 +222,17 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                                   Chip(
                                                     label: Text(item['language']),
                                                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                    labelStyle: const TextStyle(fontSize: 12),
+                                                    labelStyle: const TextStyle(fontSize: 12, color: Colors.white),
                                                     padding: EdgeInsets.zero,
-                                                    backgroundColor: Colors.blue.shade100,
+                                                    backgroundColor: Colors.blue.shade700,
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Chip(
                                                     label: Text(item['category']),
                                                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                    labelStyle: const TextStyle(fontSize: 12),
+                                                    labelStyle: const TextStyle(fontSize: 12, color: Colors.white),
                                                     padding: EdgeInsets.zero,
-                                                    backgroundColor: Colors.purple.shade100,
+                                                    backgroundColor: Colors.purple.shade700,
                                                   ),
                                                 ],
                                               ),
@@ -246,7 +246,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                             label: const Text('Open'),
                                             onPressed: () => _openZimFile(id),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
+                                              backgroundColor: Colors.green.shade700,
                                               foregroundColor: Colors.white,
                                             ),
                                           )
@@ -256,7 +256,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                             label: const Text('Pause'),
                                             onPressed: () => _pauseDownload(id),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue,
+                                              backgroundColor: Colors.blue.shade700,
                                               foregroundColor: Colors.white,
                                             ),
                                           )
@@ -265,6 +265,10 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                             icon: const Icon(Icons.download),
                                             label: const Text('Download'),
                                             onPressed: () => _downloadZimFile(id),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue.shade700,
+                                              foregroundColor: Colors.white,
+                                            ),
                                           ),
                                       ],
                                     ),
@@ -307,7 +311,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                               value: progress / 100.0,
                                               minHeight: 8,
                                               backgroundColor: Colors.grey.shade200,
-                                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
                                             ),
                                             const SizedBox(height: 4),
                                             Row(
@@ -315,8 +319,8 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
                                               children: [
                                                 Text(
                                                   'Downloading: ${(progress).toStringAsFixed(1)}%',
-                                                  style: const TextStyle(
-                                                    color: Colors.blue,
+                                                  style: TextStyle(
+                                                    color: Colors.blue.shade800,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 13,
                                                   ),
@@ -365,29 +369,29 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
       ),
     );
   }
-  
+
   // Simulate download
   void _downloadZimFile(String id) {
     // Start progress simulation
     _downloadProgress[id] = 0;
     _simulateDownloadProgress(id);
-    
+
     // Show snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Starting download: $id'), duration: const Duration(seconds: 2)),
     );
-    
+
     setState(() {});
   }
-  
+
   // Simulate download progress
   void _simulateDownloadProgress(String id) {
     const updateInterval = Duration(milliseconds: 500);
     const progressIncrement = 5.0;
-    
+
     Future.delayed(updateInterval, () {
       if (!mounted) return;
-      
+
       if (_downloadProgress.containsKey(id)) {
         setState(() {
           final currentProgress = _downloadProgress[id] ?? 0;
@@ -402,7 +406,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
       }
     });
   }
-  
+
   // Pause download simulation
   void _pauseDownload(String id) {
     // In a real implementation, we would actually pause the download stream
@@ -410,31 +414,31 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Download paused: $id'), duration: const Duration(seconds: 2)),
     );
-    
+
     setState(() {
       if (_downloadProgress.containsKey(id)) {
         // Remove the progress to stop the simulation
         final currentProgress = _downloadProgress[id]!;
         _downloadProgress.remove(id);
-        
+
         // Store the progress for resume
         _downloadProgress['paused_$id'] = currentProgress;
       }
     });
   }
-  
+
   // Cancel download simulation
   void _cancelDownload(String id) {
     setState(() {
       _downloadProgress.remove(id);
       _downloadProgress.remove('paused_$id');
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Download cancelled: $id'), duration: const Duration(seconds: 2)),
     );
   }
-  
+
   // Open ZIM file
   void _openZimFile(String id) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -446,7 +450,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
         ),
       ),
     );
-    
+
     // In an actual implementation, we would navigate to the reader screen
     // For placeholder purposes, we'll just show a dialog
     showDialog(
@@ -465,7 +469,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
       ),
     );
   }
-  
+
   String _formatSize(int size) {
     if (size < 1024) {
       return '$size B';
@@ -477,7 +481,7 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
       return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
     }
   }
-  
+
   String _formatNumber(int number) {
     if (number < 1000) {
       return number.toString();

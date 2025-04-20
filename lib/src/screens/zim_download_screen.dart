@@ -3,13 +3,14 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/zim_catalog_item.dart';
 import '../models/download_info.dart';
 import '../services/zim_catalog_service.dart';
-import '../services/zim_download_service.dart' hide DownloadInfo, DownloadStatus;
+import '../services/zim_download_service.dart' as service;
 import 'zim_reader_screen.dart';
 
 /// Screen for browsing and downloading ZIM files
@@ -23,7 +24,7 @@ class ZimDownloadScreen extends StatefulWidget {
 class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
   // Services
   final ZimCatalogService _catalogService = ZimCatalogService();
-  final ZimDownloadService _downloadService = ZimDownloadService();
+  final service.ZimDownloadService _downloadService = service.ZimDownloadService();
 
   // State variables
   List<ZimCatalogItem> _catalogItems = [];
@@ -46,7 +47,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
 
-  final Map<String, StreamSubscription<DownloadInfo>> _downloadSubscriptions = {};
+  final Map<String, StreamSubscription<service.DownloadInfo>> _downloadSubscriptions = {};
   final Map<String, DownloadInfo> _downloadStatus = {};
 
   @override
@@ -77,11 +78,18 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
 
   Future<void> _requestPermissions() async {
     try {
-      final status = await Permission.storage.request();
-      if (!status.isGranted) {
-        debugPrint('Storage permission not granted');
+      // Only request permissions on mobile platforms
+      if (Platform.isAndroid || Platform.isIOS) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          debugPrint('Storage permission not granted');
+        }
+      } else {
+        // On desktop platforms, permissions are typically not needed
+        debugPrint('Storage permissions not needed on this platform');
       }
     } catch (e) {
+      // Just log the error and continue - this is likely the MissingPluginException on desktop
       debugPrint('Error requesting permissions: $e');
     }
   }
@@ -431,6 +439,8 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
   }
 
   Future<void> _downloadZimFile(ZimCatalogItem item) async {
+    debugPrint('Starting download for ${item.name} (${item.id})');
+
     // Show a snackbar to indicate download is starting
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -442,11 +452,38 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
     // Subscribe to download progress
     final subscription = _downloadService
         .downloadZimFile(item)
-        .listen((info) {
-          setState(() {
-            _downloadStatus[item.id] = info;
-          });
-        });
+        .listen(
+          (info) {
+            debugPrint('Download update for ${item.id}: status=${info.status}, progress=${info.progress}');
+            setState(() {
+              _downloadStatus[item.id] = DownloadInfo(
+                zimId: info.item.id,
+                progress: info.progress,
+                status: info.status == service.DownloadStatus.completed ? DownloadStatus.complete :
+                       info.status == service.DownloadStatus.paused ? DownloadStatus.paused :
+                       info.status == service.DownloadStatus.inProgress ? DownloadStatus.inProgress :
+                       info.status == service.DownloadStatus.failed ? DownloadStatus.failed :
+                       DownloadStatus.cancelled,
+                filePath: info.filePath,
+                error: info.error,
+              );
+            });
+          },
+          onError: (error) {
+            debugPrint('Error in download stream for ${item.id}: $error');
+            setState(() {
+              _downloadStatus[item.id] = DownloadInfo(
+                zimId: item.id,
+                progress: 0.0,
+                status: DownloadStatus.failed,
+                error: error.toString(),
+              );
+            });
+          },
+          onDone: () {
+            debugPrint('Download stream completed for ${item.id}');
+          },
+        );
 
     _downloadSubscriptions[item.id] = subscription;
   }
