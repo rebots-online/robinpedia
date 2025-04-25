@@ -333,32 +333,42 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                 ),
               ],
             ),
-            if (isDownloading || isComplete)
+            if (isDownloading || isComplete || downloadStatus?.isFailed == true)
               Padding(
                 padding: const EdgeInsets.only(top: 12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     LinearProgressIndicator(
-                      value: isComplete ? 1.0 : progress / 100.0,
+                      value: isComplete ? 1.0 :
+                             downloadStatus?.isFailed == true ? 0.0 :
+                             progress / 100.0,
                       minHeight: 8,
                       backgroundColor: Colors.grey.shade200,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isComplete ? Colors.green : Colors.blue,
+                        isComplete ? Colors.green :
+                        downloadStatus?.isFailed == true ? Colors.red :
+                        Colors.blue,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          isComplete
-                              ? 'Downloaded - Ready to use'
-                              : 'Downloading: ${(progress).toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            color: isComplete ? Colors.green : Colors.blue,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                        Expanded(
+                          child: Text(
+                            isComplete ? 'Downloaded - Ready to use' :
+                            downloadStatus?.isFailed == true ? 'Download failed: ${downloadStatus?.error ?? "Unknown error"}' :
+                            'Downloading: ${(progress).toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              color: isComplete ? Colors.green :
+                                     downloadStatus?.isFailed == true ? Colors.red :
+                                     Colors.blue,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (isDownloading && !isComplete)
@@ -408,6 +418,7 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
     final downloadStatus = _downloadStatus[item.id];
     final isDownloading = downloadStatus?.isDownloading ?? false;
     final isComplete = downloadStatus?.isComplete ?? false;
+    final isFailed = downloadStatus?.isFailed ?? false;
 
     if (isComplete) {
       return ElevatedButton.icon(
@@ -416,6 +427,16 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
         onPressed: () => _openZimFile(item),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+      );
+    } else if (isFailed) {
+      return ElevatedButton.icon(
+        icon: const Icon(Icons.refresh),
+        label: const Text('Retry'),
+        onPressed: () => _downloadZimFile(item),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
           foregroundColor: Colors.white,
         ),
       );
@@ -479,6 +500,18 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
                 error: error.toString(),
               );
             });
+
+            // Show error message to user
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Download failed: ${error.toString()}'),
+                duration: const Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () => _downloadZimFile(item),
+                ),
+              ),
+            );
           },
           onDone: () {
             debugPrint('Download stream completed for ${item.id}');

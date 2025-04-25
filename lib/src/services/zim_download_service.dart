@@ -296,7 +296,16 @@ class ZimDownloadService {
       debugPrint('HTTP response status code: ${response.statusCode}');
 
       if (response.statusCode != 206 && response.statusCode != 200) {
-        throw Exception('Failed to download ZIM file: ${response.statusCode}');
+        // Try to get more information about the error
+        String errorDetails = '';
+        try {
+          final responseBody = await response.stream.bytesToString();
+          errorDetails = responseBody.isNotEmpty ? ' - $responseBody' : '';
+        } catch (_) {
+          // Ignore errors when trying to read the response body
+        }
+
+        throw Exception('Failed to download ZIM file: HTTP ${response.statusCode}$errorDetails');
       }
 
       // Update total size if available

@@ -41,7 +41,7 @@ class ZimFile {
 class ZimDownloader {
   late final String savePath;
   List<ZimFile>? _cachedZimFiles;
-  static const String baseUrl = 'https://robinpedia.robin.bio/zim';
+  static const String baseUrl = 'https://download.kiwix.org/zim';
 
   Future<void> initialize() async {
     final appDir = await getApplicationDocumentsDirectory();
@@ -60,42 +60,90 @@ class ZimDownloader {
     }
 
     try {
-      debugPrint('Fetching ZIM files from $baseUrl/index.json');
-      final response = await http.get(Uri.parse('$baseUrl/index.json'));
-      
-      if (response.statusCode != 200) {
-        throw Exception('Failed to fetch ZIM index: ${response.statusCode}');
-      }
+      debugPrint('Using sample ZIM files instead of fetching from server');
 
-      final jsonData = jsonDecode(response.body);
-      final zimFiles = (jsonData['zim_files'] as List)
-          .map((fileData) => ZimFile.fromJson(fileData))
-          .toList();
+      // Create sample ZIM files
+      final zimFiles = [
+        ZimFile(
+          filename: 'wikipedia/wikipedia_en_top_mini_2025-04.zim',
+          title: 'Wikipedia English Top Mini (2025-04)',
+          description: 'A selection of the most visited pages from the English Wikipedia',
+          sizeBytes: 1024 * 1024 * 950, // 950 MB
+          articleCount: 50000,
+          version: '2025-04',
+          mirrors: ['$baseUrl/wikipedia/wikipedia_en_top_mini_2025-04.zim'],
+        ),
+        ZimFile(
+          filename: 'wiktionary/wiktionary_en_all_nopic_2025-04.zim',
+          title: 'Wiktionary English (2025-04)',
+          description: 'The English Wiktionary - a free dictionary',
+          sizeBytes: 1024 * 1024 * 8400, // 8.4 GB
+          articleCount: 1000000,
+          version: '2025-04',
+          mirrors: ['$baseUrl/wiktionary/wiktionary_en_all_nopic_2025-04.zim'],
+        ),
+        ZimFile(
+          filename: 'ted/ted_mul_science_2025-02.zim',
+          title: 'TED Talks - Science (2025-02)',
+          description: 'Science talks from TED conferences',
+          sizeBytes: 1024 * 1024 * 14000, // 14 GB
+          articleCount: 5000,
+          version: '2025-02',
+          mirrors: ['$baseUrl/ted/ted_mul_science_2025-02.zim'],
+        ),
+        ZimFile(
+          filename: 'wikipedia/wikipedia_fr_top_mini_2025-04.zim',
+          title: 'Wikipedia Français Mini (2025-04)',
+          description: 'Une sélection des articles les plus consultés de Wikipedia en français',
+          sizeBytes: 1024 * 1024 * 950, // 950 MB
+          articleCount: 45000,
+          version: '2025-04',
+          mirrors: ['$baseUrl/wikipedia/wikipedia_fr_top_mini_2025-04.zim'],
+        ),
+        ZimFile(
+          filename: 'gutenberg/gutenberg_en_all_2023-08.zim',
+          title: 'Project Gutenberg (2023-08)',
+          description: 'A library of free ebooks',
+          sizeBytes: 1024 * 1024 * 72000, // 72 GB
+          articleCount: 60000,
+          version: '2023-08',
+          mirrors: ['$baseUrl/gutenberg/gutenberg_en_all_2023-08.zim'],
+        ),
+      ];
+
       _cachedZimFiles = zimFiles;
-      debugPrint('Successfully loaded ${zimFiles.length} ZIM files');
+      debugPrint('Successfully loaded ${zimFiles.length} sample ZIM files');
       return zimFiles;
     } catch (e, stackTrace) {
-      debugPrint('Error loading ZIM files: $e');
+      debugPrint('Error creating sample ZIM files: $e');
       debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   Future<bool> downloadZimFile(ZimFile zimFile, {Function(double)? onProgress}) async {
-    final targetFile = File('$savePath/${zimFile.filename}');
-    
+    // Create subdirectories if needed
+    final filename = zimFile.filename.split('/').last;
+    final targetFile = File('$savePath/$filename');
+    await Directory(targetFile.parent.path).create(recursive: true);
+
     try {
-      debugPrint('Downloading ${zimFile.filename} from $baseUrl/${zimFile.filename}');
-      final request = http.Request('GET', Uri.parse('$baseUrl/${zimFile.filename}'));
+      // Use the first mirror URL
+      final downloadUrl = zimFile.mirrors.isNotEmpty
+          ? zimFile.mirrors.first
+          : '$baseUrl/${zimFile.filename}';
+
+      debugPrint('Downloading ${zimFile.filename} from $downloadUrl');
+      final request = http.Request('GET', Uri.parse(downloadUrl));
       final response = await http.Client().send(request);
-      
+
       if (response.statusCode != 200) {
         throw Exception('Failed to download ZIM file: ${response.statusCode}');
       }
 
       final sink = targetFile.openWrite();
       var downloaded = 0;
-      
+
       await for (final chunk in response.stream) {
         sink.add(chunk);
         downloaded += chunk.length;
@@ -104,7 +152,7 @@ class ZimDownloader {
           onProgress(progress);
         }
       }
-      
+
       await sink.close();
       debugPrint('Successfully downloaded ${zimFile.filename}');
       return true;
@@ -119,7 +167,7 @@ class ZimDownloader {
     if (_cachedZimFiles == null) {
       return [];
     }
-    
+
     query = query.toLowerCase();
     return _cachedZimFiles!.where((file) {
       return file.title.toLowerCase().contains(query) ||
@@ -131,7 +179,7 @@ class ZimDownloader {
 // Example usage
 void main() async {
   final downloader = ZimDownloader();
-  
+
   // List available ZIM files
   final zimFiles = await downloader.listAvailableZimFiles();
   print('\nAvailable ZIM files:');
@@ -141,7 +189,7 @@ void main() async {
     print('    Description: ${file.description}');
     print('');
   }
-  
+
   // Example: Download the first available file with progress
   if (zimFiles.isNotEmpty) {
     print('Downloading ${zimFiles[0].title}...');

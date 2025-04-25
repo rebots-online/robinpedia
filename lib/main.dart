@@ -5,11 +5,39 @@ import 'package:flutter/foundation.dart';
 import 'src/screens/zim_download_placeholder.dart';
 import 'src/screens/zim_download_screen.dart';
 
+// Ontological Preamble Library imports
+import 'ontology/core/capability_registry.dart';
+import 'ontology/capabilities/compression_capability.dart';
+import 'ontology/capabilities/binary_data_capability.dart';
+import 'ontology/capabilities/file_system_capability.dart';
+import 'ontology/capabilities/zim_capability.dart';
+
+// Platform-specific implementations
+import 'platforms/android/compression_capability_impl.dart';
+import 'platforms/android/binary_data_capability_impl.dart';
+import 'platforms/android/file_system_capability_impl.dart';
+import 'platforms/android/zim_capability_impl.dart';
+
 // Platform-aware entrypoint for Robinpedia
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the Ontological Preamble Library
+  _initializeOntologyLibrary();
+
   runApp(const RobinpediaApp());
+}
+
+/// Initialize the Ontological Preamble Library
+void _initializeOntologyLibrary() {
+  // Register platform-specific capabilities
+  AndroidCompressionCapabilityReg.register();
+  AndroidBinaryDataCapabilityReg.register();
+  AndroidFileSystemCapabilityReg.register();
+  AndroidZimCapabilityReg.register();
+
+  debugPrint('Ontological Preamble Library initialized');
 }
 
 class RobinpediaApp extends StatelessWidget {

@@ -11,7 +11,7 @@ import '../models/zim_catalog_item.dart';
 /// but is designed to be easily replaced with a custom catalog source in the future.
 class ZimCatalogService {
   /// Default Kiwix library API URL
-  static const String kiwixLibraryApiUrl = 'https://library.kiwix.org/catalog/v2/entries.json';
+  static const String kiwixLibraryApiUrl = 'https://library.kiwix.org/catalog/v2/entries';
 
   /// Custom catalog URL (for future use)
   final String? customCatalogUrl;
@@ -58,30 +58,25 @@ class ZimCatalogService {
         },
       );
 
+      // Try to get JSON format first
       final response = await _client.get(
         uri,
         headers: {'Accept': 'application/json'},
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to fetch ZIM catalog: ${response.statusCode}');
-      }
-
-      // Handle potential UTF-8 encoding issues
-      Map<String, dynamic> decoded;
-      try {
-        decoded = json.decode(response.body) as Map<String, dynamic>;
-      } catch (e) {
-        debugPrint('Error decoding JSON: $e');
+        debugPrint('Failed to fetch ZIM catalog: ${response.statusCode}');
         // Fall back to sample data
         return _getSampleCatalogItems();
       }
-      final items = decoded['items'] as List<dynamic>? ?? [];
 
-      return items
-          .map((item) => ZimCatalogItem.fromJson(item as Map<String, dynamic>))
-          .where((item) => item.downloadUrls.isNotEmpty) // Only include items with download URLs
-          .toList();
+      // The Kiwix API returns XML in OPDS format, but we need JSON
+      // For now, we'll use the sample data as a fallback
+      debugPrint('Received response from Kiwix API, but using sample data for now');
+      debugPrint('In the future, implement XML parsing for OPDS format');
+
+      // Return sample data for now
+      return _getSampleCatalogItems();
     } catch (e) {
       // For testing purposes, if network fails, return sample data
       if (query == null && lang == null && category == null) {
@@ -163,57 +158,57 @@ class ZimCatalogService {
   List<ZimCatalogItem> _getSampleCatalogItems() {
     return [
       ZimCatalogItem(
-        id: 'wikipedia_en_all_mini',
-        name: 'Wikipedia English Mini',
+        id: 'wikipedia_en_top_mini_2025-04',
+        name: 'Wikipedia English Top Mini (2025-04)',
         description: 'A selection of the most visited pages from the English Wikipedia',
         language: 'eng',
         category: 'wikipedia',
-        size: 1024 * 1024 * 500, // 500 MB
-        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_mini_2023-10.zim'],
+        size: 1024 * 1024 * 950, // 950 MB
+        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_en_top_mini_2025-04.zim'],
         favicon: 'https://en.wikipedia.org/favicon.ico',
         created: DateTime.now().subtract(const Duration(days: 30)),
       ),
       ZimCatalogItem(
-        id: 'wiktionary_en_mini',
-        name: 'Wiktionary English Mini',
+        id: 'wiktionary_en_all_nopic_2025-04',
+        name: 'Wiktionary English (2025-04)',
         description: 'The English Wiktionary - a free dictionary',
         language: 'eng',
         category: 'wiktionary',
-        size: 1024 * 1024 * 300, // 300 MB
-        downloadUrls: ['https://download.kiwix.org/zim/wiktionary/wiktionary_en_mini_2023-10.zim'],
+        size: 1024 * 1024 * 8400, // 8.4 GB
+        downloadUrls: ['https://download.kiwix.org/zim/wiktionary/wiktionary_en_all_nopic_2025-04.zim'],
         favicon: 'https://en.wiktionary.org/favicon.ico',
         created: DateTime.now().subtract(const Duration(days: 45)),
       ),
       ZimCatalogItem(
-        id: 'ted_en_science',
-        name: 'TED Talks - Science',
+        id: 'ted_mul_science_2025-02',
+        name: 'TED Talks - Science (2025-02)',
         description: 'Science talks from TED conferences',
         language: 'eng',
         category: 'ted',
-        size: 1024 * 1024 * 350, // 350 MB
-        downloadUrls: ['https://download.kiwix.org/zim/ted/ted_en_science_2023-03.zim'],
+        size: 1024 * 1024 * 14000, // 14 GB
+        downloadUrls: ['https://download.kiwix.org/zim/ted/ted_mul_science_2025-02.zim'],
         favicon: 'https://www.ted.com/favicon.ico',
         created: DateTime.now().subtract(const Duration(days: 60)),
       ),
       ZimCatalogItem(
-        id: 'wikipedia_fr_all_mini',
-        name: 'Wikipedia Français Mini',
+        id: 'wikipedia_fr_top_mini_2025-04',
+        name: 'Wikipedia Français Mini (2025-04)',
         description: 'Une sélection des articles les plus consultés de Wikipedia en français',
         language: 'fra',
         category: 'wikipedia',
-        size: 1024 * 1024 * 500, // 500 MB
-        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_fr_all_mini_2023-10.zim'],
+        size: 1024 * 1024 * 950, // 950 MB
+        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_fr_top_mini_2025-04.zim'],
         favicon: 'https://fr.wikipedia.org/favicon.ico',
         created: DateTime.now().subtract(const Duration(days: 35)),
       ),
       ZimCatalogItem(
-        id: 'gutenberg_en_all_mini',
-        name: 'Project Gutenberg Mini',
+        id: 'gutenberg_en_all_2023-08',
+        name: 'Project Gutenberg (2023-08)',
         description: 'A library of free ebooks',
         language: 'eng',
         category: 'other',
-        size: 1024 * 1024 * 400, // 400 MB
-        downloadUrls: ['https://download.kiwix.org/zim/gutenberg/gutenberg_en_all_mini_2023-07.zim'],
+        size: 1024 * 1024 * 72000, // 72 GB
+        downloadUrls: ['https://download.kiwix.org/zim/gutenberg/gutenberg_en_all_2023-08.zim'],
         favicon: 'https://www.gutenberg.org/favicon.ico',
         created: DateTime.now().subtract(const Duration(days: 90)),
       ),
