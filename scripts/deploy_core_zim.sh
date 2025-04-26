@@ -11,8 +11,8 @@ set -e  # Exit on any error
 
 # Environment Setup
 export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-export ANDROID_HOME="/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk"
-export ANDROID_SDK_ROOT="/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk"
+export ANDROID_HOME="/home/robin/Android/Sdk"
+export ANDROID_SDK_ROOT="/home/robin/Android/Sdk"
 export PATH="${JAVA_HOME}/bin:${ANDROID_SDK_ROOT}/platform-tools:$PATH"
 
 # Configuration

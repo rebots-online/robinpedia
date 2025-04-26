@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'src/screens/zim_download_placeholder.dart';
 import 'src/screens/zim_download_screen.dart';
+import 'src/utils/version_info.dart';
 
 // Ontological Preamble Library imports
 import 'ontology/core/capability_registry.dart';
@@ -20,11 +21,14 @@ import 'platforms/android/zim_capability_impl.dart';
 
 // Platform-aware entrypoint for Robinpedia
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize the Ontological Preamble Library
   _initializeOntologyLibrary();
+
+  // Initialize version info
+  await VersionInfo.initialize();
 
   runApp(const RobinpediaApp());
 }

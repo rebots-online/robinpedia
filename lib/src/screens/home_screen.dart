@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'zim_debug_screen.dart';
 import 'zim_download_screen.dart';
+import 'about_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,6 +12,19 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Robinpedia'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AboutScreen(),
+                ),
+              );
+            },
+            tooltip: 'About',
+          ),
+        ],
       ),
       body: Center(
         child: Padding(

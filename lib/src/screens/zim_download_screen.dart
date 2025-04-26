@@ -12,6 +12,7 @@ import '../models/download_info.dart';
 import '../services/zim_catalog_service.dart';
 import '../services/zim_download_service.dart' as service;
 import 'zim_reader_screen.dart';
+import 'about_screen.dart';
 
 /// Screen for browsing and downloading ZIM files
 class ZimDownloadScreen extends StatefulWidget {
@@ -679,6 +680,17 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: _loadCatalog,
             tooltip: 'Refresh Catalog',
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AboutScreen(),
+                ),
+              );
+            },
+            tooltip: 'About',
           ),
         ],
       ),

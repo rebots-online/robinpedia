@@ -23,7 +23,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/cmake --regenerate-during-build -S/home/robin/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/groovy -B/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/18y62312/armeabi-v7a
+  command = /home/robin/Android/Sdk/cmake/3.22.1/bin/cmake --regenerate-during-build -S/home/robin/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/groovy -B/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/18y62312/armeabi-v7a
   description = Re-running CMake...
   generator = 1
 
@@ -32,7 +32,7 @@ rule RERUN_CMAKE
 # Rule for cleaning all built files.
 
 rule CLEAN
-  command = /mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/ninja $FILE_ARG -t clean $TARGETS
+  command = /home/robin/Android/Sdk/cmake/3.22.1/bin/ninja $FILE_ARG -t clean $TARGETS
   description = Cleaning all built files...
 
 
@@ -40,6 +40,6 @@ rule CLEAN
 # Rule for printing all primary targets available.
 
 rule HELP
-  command = /mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/ninja -t targets
+  command = /home/robin/Android/Sdk/cmake/3.22.1/bin/ninja -t targets
   description = All primary targets available:
 

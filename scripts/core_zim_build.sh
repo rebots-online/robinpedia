@@ -18,7 +18,7 @@ PROJECT_ROOT="/home/robin/CascadeProjects/robinpedia"
 TIMESTAMP=$(date "+%Y%m%d-%H%M%S")
 LOG_FILE="${PROJECT_ROOT}/logs/core_build_${TIMESTAMP}.log"
 JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-ANDROID_SDK_ROOT="/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk"
+ANDROID_SDK_ROOT="/home/robin/Android/Sdk"
 
 # Ensure logs directory exists
 mkdir -p "${PROJECT_ROOT}/logs"
@@ -77,31 +77,31 @@ cd "${PROJECT_ROOT}" && flutter build apk --debug --target-platform android-arm6
 
 if [ $? -eq 0 ]; then
   log "Core ZIM reader APK built successfully"
-  
+
   # Connect to the test device
   log "Connecting to test device at ${ADB_TARGET}"
   adb connect "${ADB_TARGET}"
-  
+
   if [ $? -eq 0 ]; then
     log "Successfully connected to device"
-    
+
     # Install the APK
     APK_PATH="${PROJECT_ROOT}/build/app/outputs/flutter-apk/app-debug.apk"
     log "Installing APK to device"
     adb -s "${ADB_TARGET}" install -r "${APK_PATH}"
-    
+
     if [ $? -eq 0 ]; then
       log "APK installed successfully"
       log "Launching application"
       adb -s "${ADB_TARGET}" shell am start -n world.robinsai.robinpedia/.MainActivity
-      
+
       if [ $? -eq 0 ]; then
         log "Application launched successfully"
         log "Deployment complete - core ZIM reader functionality ready for verification"
-        
+
         # Update the CHECKLIST.md to reflect this milestone
         echo "[/] Core ZIM Reader functionality deployed for verification ($(date "+%Y-%m-%d %H:%M:%S"))" >> "${PROJECT_ROOT}/CHECKLIST.md"
-        
+
         exit 0
       else
         log "ERROR: Failed to launch application"

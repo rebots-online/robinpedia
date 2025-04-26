@@ -4,14 +4,14 @@
   ],
   "cleanCommandsComponents": [
     [
-      "/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/ninja",
+      "/home/robin/Android/Sdk/cmake/3.22.1/bin/ninja",
       "-C",
       "/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/18y62312/arm64-v8a",
       "clean"
     ]
   ],
   "buildTargetsCommandComponents": [
-    "/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/cmake/3.22.1/bin/ninja",
+    "/home/robin/Android/Sdk/cmake/3.22.1/bin/ninja",
     "-C",
     "/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/18y62312/arm64-v8a",
     "{LIST_OF_TARGETS_TO_BUILD}"
@@ -19,8 +19,8 @@
   "libraries": {},
   "toolchains": {
     "toolchain": {
-      "cCompilerExecutable": "/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/ndk/26.3.11579264/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
-      "cppCompilerExecutable": "/mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk/ndk/26.3.11579264/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+      "cCompilerExecutable": "/home/robin/Android/Sdk/ndk/26.3.11579264/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/robin/Android/Sdk/ndk/26.3.11579264/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
     }
   },
   "cFileExtensions": [],

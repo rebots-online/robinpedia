@@ -14,7 +14,7 @@
 ## Configuration
 
 - **Java Version**: OpenJDK 17.0.14 (2025-01-21)
-- **Android SDK Path**: /mnt/CONSOLIDATE/CascadeProjects/android-studio-sdk
+- **Android SDK Path**: /home/robin/Android/Sdk
 - **Compilation SDK**: 35
 - **Minimum SDK**: 21
 - **Target SDK**: 34
@@ -89,5 +89,5 @@ chmod +x /home/robin/CascadeProjects/robinpedia/scripts/deploy_core_zim.sh
 
 ---
 
-**Build Timestamp**: 2025-04-09T15:05:00-04:00  
+**Build Timestamp**: 2025-04-09T15:05:00-04:00
 **Deployment Log Entry**: `/home/robin/CascadeProjects/robinpedia/logs/deploy_core_zim_20250409-150143.log`
