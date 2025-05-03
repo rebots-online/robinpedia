@@ -29,12 +29,22 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
 
   // State variables
   List<ZimCatalogItem> _catalogItems = [];
+
+  // PLACEHOLDER DATA: Issue #2 - Remove by 2025-06-01
+  // This placeholder data is used as initial values before API data is loaded
+  // and as fallback when language/category API calls fail.
+  // See docs/PLACEHOLDER_REGISTRY.md for more details.
   final List<Map<String, String>> _languages = [
     {'code': 'eng', 'name': 'English', 'count': '42'},
     {'code': 'fra', 'name': 'French', 'count': '28'},
     {'code': 'spa', 'name': 'Spanish', 'count': '31'},
     {'code': 'deu', 'name': 'German', 'count': '24'},
   ];
+
+  // PLACEHOLDER DATA: Issue #2 - Remove by 2025-06-01
+  // This placeholder data is used as initial values before API data is loaded
+  // and as fallback when language/category API calls fail.
+  // See docs/PLACEHOLDER_REGISTRY.md for more details.
   final List<Map<String, String>> _categories = [
     {'id': 'wikipedia', 'name': 'Wikipedia', 'count': '120'},
     {'id': 'wiktionary', 'name': 'Wiktionary', 'count': '45'},
