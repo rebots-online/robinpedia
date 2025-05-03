@@ -74,8 +74,8 @@ This checklist focuses on getting a working development build of the Robinpedia 
 
 ### Deployment
 - [x] Create a release build for Android
-- [ ] Test the release build on multiple devices
-- [ ] Document any platform-specific issues
+- [/] Test the release build on multiple devices
+- [/] Document any platform-specific issues
 - [ ] Create a release branch for stable builds
 
 ## Implementation Plan

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ========================================================================
-# Switch to Java 17 for the current terminal session
+# Switch to Java 17 for the current terminal session (for Android builds)
 # (C)2025 Robin L. M. Cheung, MBA
 # ========================================================================
 # Usage: source ./scripts/use_java17.sh
@@ -16,8 +16,6 @@ detect_java17() {
         "/usr/lib/jvm/java-17-openjdk-amd64"
         "/usr/lib/jvm/temurin-17-jdk"
         "/usr/lib/jvm/temurin-17-jdk-amd64"
-        "/usr/lib/jvm/java-16-openjdk"
-        "/usr/lib/jvm/java-16-openjdk-amd64"
     )
     
     for path in "${paths[@]}"; do
@@ -29,7 +27,7 @@ detect_java17() {
     
     # If none of the standard paths work, try the alternatives system
     if command -v update-alternatives &> /dev/null; then
-        # Try both OpenJDK 17 and Temurin 17 patterns
+        # Try both Java 17 and Temurin 17 patterns
         java_path=$(update-alternatives --list java 2>/dev/null | grep -E 'java-17|temurin-17' | head -1 | sed 's|/bin/java||')
         if [ -n "$java_path" ]; then
             echo "$java_path"
@@ -41,16 +39,13 @@ detect_java17() {
 }
 
 # Main script
-echo "Switching to Java 17..."
+echo "Switching to Java 17 for Android builds..."
 
 JAVA17_HOME=$(detect_java17)
 
 if [ -z "$JAVA17_HOME" ]; then
     echo "Java 17 not found. Please install it first."
-    echo "You can install OpenJDK 17 with:"
-    echo "sudo apt install openjdk-17-jdk  # Debian/Ubuntu"
-    echo "sudo dnf install java-17-openjdk-devel  # Fedora"
-    echo "brew install --cask temurin17  # macOS with Homebrew"
+    echo "You can run: sudo ./scripts/build_with_java17.sh"
     return 1
 fi
 

@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace "world.robinsai.robinpedia"
-    compileSdkVersion 36 // Updated to match available SDK
+    compileSdkVersion 34 // Updated to match Android 14
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -25,7 +25,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk 21  // Lowered for better compatibility
-        targetSdk 36  // Using Android 14
+        targetSdk 34  // Using Android 14
         versionCode 1
         versionName "1.0.0"
 
@@ -37,7 +37,7 @@ android {
             enable true
             reset()
             include 'arm64-v8a', 'armeabi-v7a', 'x86_64'
-            universalApk false  // Disable universal APK to reduce build time
+            universalApk true  // Enable universal APK for better compatibility
         }
     }
 

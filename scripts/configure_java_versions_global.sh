@@ -4,7 +4,8 @@
 # (C)2025 Robin L. M. Cheung, MBA
 # ========================================================================
 # This script configures VSCode to use multiple Java versions globally,
-# setting Java 21 as the default and Java 17 for Gradle/Android builds.
+# setting Java 17 as the DEFAULT for Gradle/Android builds (REQUIRED for Android compatibility)
+# and Java 21 for Neo4j and other general development tasks (NOT for Android build tasks).
 # The configuration applies to all VSCode projects system-wide.
 # ========================================================================
 
@@ -196,16 +197,16 @@ update_vscode_settings() {
     cat << EOF >> "$temp_file"
   "java.configuration.runtimes": [
     {
-      "name": "JavaSE-21",
-      "path": "$java21_path",
+      "name": "JavaSE-17",
+      "path": "$java17_path",
       "default": true
     },
     {
-      "name": "JavaSE-17",
-      "path": "$java17_path"
+      "name": "JavaSE-21",
+      "path": "$java21_path"
     }
   ],
-  "java.jdt.ls.java.home": "$java21_path",
+  "java.jdt.ls.java.home": "$java17_path",
   "java.import.gradle.java.home": "$java17_path",
   "java.configuration.updateBuildConfiguration": "automatic"
 }
@@ -213,9 +214,9 @@ EOF
   else
     # Get existing settings
     jq_filter='.["java.configuration.runtimes"] = [
-      {"name": "JavaSE-21", "path": "'"$java21_path"'", "default": true},
-      {"name": "JavaSE-17", "path": "'"$java17_path"'"}
-    ] | .["java.jdt.ls.java.home"] = "'"$java21_path"'" | .["java.import.gradle.java.home"] = "'"$java17_path"'" | .["java.configuration.updateBuildConfiguration"] = "automatic"'
+      {"name": "JavaSE-17", "path": "'"$java17_path"'", "default": true},
+      {"name": "JavaSE-21", "path": "'"$java21_path"'"}
+    ] | .["java.jdt.ls.java.home"] = "'"$java17_path"'" | .["java.import.gradle.java.home"] = "'"$java17_path"'" | .["java.configuration.updateBuildConfiguration"] = "automatic"'
     
     jq "$jq_filter" "$temp_file" > "${temp_file}.new"
     mv "${temp_file}.new" "$temp_file"
@@ -250,18 +251,18 @@ update_project_settings() {
     // Java configuration for multiple JDK support
     "java.configuration.runtimes": [
         {
-            "name": "JavaSE-21",
-            "path": "$java21_path",
+            "name": "JavaSE-17",
+            "path": "$java17_path",
             "default": true
         },
         {
-            "name": "JavaSE-17",
-            "path": "$java17_path"
+            "name": "JavaSE-21",
+            "path": "$java21_path"
         }
     ],
     
     // Java settings that help with mixed version projects
-    "java.jdt.ls.java.home": "$java21_path",
+    "java.jdt.ls.java.home": "$java17_path",
     "java.import.gradle.java.home": "$java17_path",
     "java.configuration.updateBuildConfiguration": "automatic",
     

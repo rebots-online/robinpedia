@@ -4,8 +4,8 @@
 # (C)2025 Robin L. M. Cheung, MBA
 # ========================================================================
 # This script configures multiple Java versions for the project
-# - Java 21 for general development and Neo4j
-# - Java 17 for Gradle/Android builds
+# - Java 17 for Gradle/Android builds (primary and required for Android compatibility)
+# - Java 21 for general development and Neo4j (should not be used for Android builds)
 # 
 # Usage: ./configure_java_versions.sh
 # ========================================================================
@@ -76,25 +76,25 @@ generate_settings() {
     # Add Java configuration
     content+="    \"java.configuration.runtimes\": ["
     
-    # Add Java 21 if found
-    if [ -n "$JAVA21_PATH" ]; then
+    # Add Java 17 if found (preferred for Android builds)
+    if [ -n "$JAVA17_PATH" ]; then
         content+="\n        {\n"
-        content+="            \"name\": \"JavaSE-21\",\n"
-        content+="            \"path\": \"$JAVA21_PATH\",\n"
+        content+="            \"name\": \"JavaSE-17\",\n"
+        content+="            \"path\": \"$JAVA17_PATH\",\n"
         content+="            \"default\": true\n"
         content+="        }"
         
-        # Add comma if Java 17 is also found
-        if [ -n "$JAVA17_PATH" ]; then
+        # Add comma if Java 21 is also found
+        if [ -n "$JAVA21_PATH" ]; then
             content+=","
         fi
     fi
     
-    # Add Java 17 if found
-    if [ -n "$JAVA17_PATH" ]; then
+    # Add Java 21 if found
+    if [ -n "$JAVA21_PATH" ]; then
         content+="\n        {\n"
-        content+="            \"name\": \"JavaSE-17\",\n"
-        content+="            \"path\": \"$JAVA17_PATH\"\n"
+        content+="            \"name\": \"JavaSE-21\",\n"
+        content+="            \"path\": \"$JAVA21_PATH\"\n"
         content+="        }"
     fi
     
@@ -127,25 +127,25 @@ if [ -f "$SETTINGS_FILE" ]; then
         fi
         echo "    \"java.configuration.runtimes\": [" >> "$SETTINGS_FILE.tmp"
         
-        # Add Java 21 if found
-        if [ -n "$JAVA21_PATH" ]; then
+        # Add Java 17 if found (preferred for Android builds)
+        if [ -n "$JAVA17_PATH" ]; then
             echo "        {" >> "$SETTINGS_FILE.tmp"
-            echo "            \"name\": \"JavaSE-21\"," >> "$SETTINGS_FILE.tmp"
-            echo "            \"path\": \"$JAVA21_PATH\"," >> "$SETTINGS_FILE.tmp"
+            echo "            \"name\": \"JavaSE-17\"," >> "$SETTINGS_FILE.tmp"
+            echo "            \"path\": \"$JAVA17_PATH\"," >> "$SETTINGS_FILE.tmp"
             echo "            \"default\": true" >> "$SETTINGS_FILE.tmp"
             echo "        }" >> "$SETTINGS_FILE.tmp"
             
-            # Add comma if Java 17 is also found
-            if [ -n "$JAVA17_PATH" ]; then
+            # Add comma if Java 21 is also found
+            if [ -n "$JAVA21_PATH" ]; then
                 echo "        ," >> "$SETTINGS_FILE.tmp"
             fi
         fi
         
-        # Add Java 17 if found
-        if [ -n "$JAVA17_PATH" ]; then
+        # Add Java 21 if found
+        if [ -n "$JAVA21_PATH" ]; then
             echo "        {" >> "$SETTINGS_FILE.tmp"
-            echo "            \"name\": \"JavaSE-17\"," >> "$SETTINGS_FILE.tmp"
-            echo "            \"path\": \"$JAVA17_PATH\"" >> "$SETTINGS_FILE.tmp"
+            echo "            \"name\": \"JavaSE-21\"," >> "$SETTINGS_FILE.tmp"
+            echo "            \"path\": \"$JAVA21_PATH\"" >> "$SETTINGS_FILE.tmp"
             echo "        }" >> "$SETTINGS_FILE.tmp"
         fi
         

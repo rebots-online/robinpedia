@@ -1,7 +1,7 @@
 name: robinpedia
 description: "Your offline knowledge companion: Galaxy Brain"
 publish_to: 'none'
-version: 1.0.0+4
+version: 1.0.0+7
 
 environment:
   sdk: ^3.5.4
@@ -29,7 +29,7 @@ dependencies:
   flame: ^1.16.0    # For advanced canvas operations in annotations
   vector_math: ^2.1.4 # For mathematical operations in the annotation system
   # file_picker: ^5.3.0  # For selecting ZIM files in the debug interface (temporarily disabled)
-  js: ^0.6.5       # For JavaScript interop in web implementation
+  js: ^0.7.1       # For JavaScript interop in web implementation (using latest version)
   package_info_plus: ^8.3.0  # For getting app version information
 
 dev_dependencies:
