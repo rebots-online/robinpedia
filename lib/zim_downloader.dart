@@ -1,4 +1,4 @@
-import 'dart:io';
+Conneimport 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -158,6 +158,7 @@ class ZimDownloader {
                 final request = http.Request('GET', Uri.parse(mirror));
                 response = await http.Client().send(request);
                 
+                debugPrint('Response status code for mirror $mirror: ${response.statusCode}'); // Added log
                 if (response.statusCode == 200) {
                   downloadUrl = mirror;
                   break;
@@ -183,6 +184,7 @@ class ZimDownloader {
                 final archiveRequest = http.Request('GET', Uri.parse(directArchiveUrl));
                 response = await http.Client().send(archiveRequest);
                 
+                debugPrint('Response status code for archive URL $directArchiveUrl: ${response.statusCode}'); // Added log
                 if (response.statusCode == 200) {
                   downloadUrl = directArchiveUrl;
                   debugPrint('Archive URL successful');
@@ -202,6 +204,7 @@ class ZimDownloader {
                   final legacyRequest = http.Request('GET', Uri.parse(directLegacyUrl));
                   response = await http.Client().send(legacyRequest);
                   
+                  debugPrint('Response status code for legacy URL $directLegacyUrl: ${response.statusCode}'); // Added log
                   if (response.statusCode == 200) {
                     downloadUrl = directLegacyUrl;
                     debugPrint('Legacy URL successful');

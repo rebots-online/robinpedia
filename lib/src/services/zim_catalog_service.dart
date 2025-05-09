@@ -366,13 +366,13 @@ class ZimCatalogService {
     debugPrint('WARNING: Using placeholder ZIM catalog data - see Issue #1');
     return [
       ZimCatalogItem(
-        id: 'wikipedia_en_all_mini_2023-03',
-        name: 'Wikipedia English Mini (2023-03)',
+        id: 'wikipedia_en_all_mini_2024-04',
+        name: 'Wikipedia English Mini (2024-04)',
         description: 'A selection of the most visited pages from the English Wikipedia',
         language: 'eng',
         category: 'wikipedia',
-        size: 1024 * 1024 * 950, // 950 MB
-        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_mini_2023-03.zim'],
+        size: 1024 * 1024 * 7065, // 6.9 GB
+        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_mini_2024-04.zim'],
         favicon: 'https://en.wikipedia.org/favicon.ico',
         created: DateTime.now().subtract(const Duration(days: 30)),
       ),

@@ -189,14 +189,14 @@ class _ZimDownloadScreenState extends State<ZimDownloadScreen> {
     // Wikipedia samples
     sampleItems.add(
       ZimCatalogItem(
-        id: 'wikipedia_en_all_mini_2023-03',
+        id: 'wikipedia_en_all_mini_2024-04',
         name: 'Wikipedia English (Mini)',
-        size: 1024 * 1024 * 1024, // 1 GB
+        size: 1024 * 1024 * 7065, // 6.9 GB
         language: 'eng',
         category: 'wikipedia',
-        downloadUrls: ['https://download.kiwix.org/zim/wikipedia_en_all_mini_2023-03.zim'],
+        downloadUrls: ['https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_mini_2024-04.zim'],
         description: 'A mini version of the English Wikipedia encyclopedia',
-        created: DateTime(2023, 3, 1),
+        created: DateTime(2024, 4, 21),
       ),
     );
 

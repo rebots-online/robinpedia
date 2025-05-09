@@ -19,9 +19,9 @@ class _ZimDownloadPlaceholderState extends State<ZimDownloadPlaceholder> {
   // Sample data
   final List<Map<String, dynamic>> _catalogItems = [
     {
-      'id': 'wikipedia_en_all_mini_2023-03',
+      'id': 'wikipedia_en_all_mini_2024-04',
       'name': 'Wikipedia English (Mini)',
-      'size': 1024 * 1024 * 1024, // 1 GB
+      'size': 1024 * 1024 * 7065, // 6.9 GB
       'language': 'eng',
       'category': 'wikipedia',
       'description': 'A mini version of the English Wikipedia encyclopedia',
