@@ -1,5 +1,4 @@
 Conneimport 'dart:io';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:path_provider/path_provider.dart';
@@ -223,7 +222,7 @@ class ZimDownloader {
             }
           }
           
-          if (downloadUrl == null || response == null) {
+          if (response == null) {
             throw lastException ?? Exception('Failed to download ZIM file: No working URL found');
           }
           

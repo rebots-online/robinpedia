@@ -6,8 +6,8 @@
 # to a connected Android device over WiFi ADB.
 
 # Configuration
-DEVICE_IP="192.168.0.124"
-DEVICE_PORT="33807"
+DEVICE_IP="192.168.0.18"
+DEVICE_PORT="1031"
 ADB_TARGET="${DEVICE_IP}:${DEVICE_PORT}"
 APP_ID="com.robinpedia.app"
 PROJECT_ROOT="/home/robin/CascadeProjects/robinpedia"

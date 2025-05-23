@@ -4,8 +4,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/src/style/padding.dart';
-import 'package:flutter_html/src/style/margin.dart';
 import '../zim/zim_reader_platform.dart';
 import '../zim/zim_entry.dart';
 import '../utils/memory_manager.dart';

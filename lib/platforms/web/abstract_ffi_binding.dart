@@ -1,7 +1,6 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 import '../../src/utils/memory_manager.dart';
@@ -12,13 +11,13 @@ import '../../src/utils/memory_manager.dart';
 /// but doesn't provide actual FFI functionality.
 abstract class AbstractFFIBinding {
   /// Indicates whether the library is loaded
-  bool _isLibraryLoaded = false;
+  final bool _isLibraryLoaded = false;
 
   /// Indicates whether an error occurred during library loading
-  bool _hasLibraryLoadError = true; // Always true for web
+  final bool _hasLibraryLoadError = true; // Always true for web
 
   /// Error message if library loading failed
-  String _libraryLoadErrorMessage = 'FFI is not supported on web platforms';
+  final String _libraryLoadErrorMessage = 'FFI is not supported on web platforms';
 
   /// Memory manager for efficient buffer handling
   final MemoryManager _memoryManager = MemoryManager();

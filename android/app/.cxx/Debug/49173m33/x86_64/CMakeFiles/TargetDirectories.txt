@@ -1,0 +1,2 @@
+/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/49173m33/x86_64/CMakeFiles/edit_cache.dir
+/home/robin/CascadeProjects/robinpedia/android/app/.cxx/Debug/49173m33/x86_64/CMakeFiles/rebuild_cache.dir

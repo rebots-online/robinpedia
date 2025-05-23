@@ -7,7 +7,7 @@ import '../file_system_ffi.dart';
 
 /// Example of using FileSystemCapability on Android
 class FileSystemExample extends StatefulWidget {
-  const FileSystemExample({Key? key}) : super(key: key);
+  const FileSystemExample({super.key});
 
   @override
   State<FileSystemExample> createState() => _FileSystemExampleState();

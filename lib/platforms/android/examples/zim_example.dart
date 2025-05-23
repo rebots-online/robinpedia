@@ -10,7 +10,7 @@ import '../file_system_ffi.dart';
 
 /// Example of using ZimCapability on Android
 class ZimExample extends StatefulWidget {
-  const ZimExample({Key? key}) : super(key: key);
+  const ZimExample({super.key});
 
   @override
   State<ZimExample> createState() => _ZimExampleState();

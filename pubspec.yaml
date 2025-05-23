@@ -1,56 +1,36 @@
 name: robinpedia
-description: "Your offline knowledge companion: Galaxy Brain"
+description: A Wikipedia viewer and offline ZIM file reader.
 publish_to: 'none'
-version: 1.0.0+12
+
+version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.4
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.2
-  provider: ^6.0.5
-  path_provider: ^2.1.2
-  path: ^1.9.0
-  shared_preferences: ^2.2.1
-  crypto: ^3.0.3
-  collection: ^1.18.0
   http: ^1.1.0
-  permission_handler: ^11.0.1
-  device_info_plus: ^11.2.2
-  convert: ^3.1.1
-  connectivity_plus: ^5.0.2
-  ffi: ^2.1.0        # For native code bindings (will use for LZMA later)
-  typed_data: ^1.3.2 # For binary data handling
-  uuid: ^4.3.3      # For generating unique IDs for annotations
-  flutter_animate: ^4.5.0  # For animations in the Galaxy Brain UI
-  flutter_html: ^3.0.0-beta.2  # For rendering HTML content in articles
-  flame: ^1.16.0    # For advanced canvas operations in annotations
-  vector_math: ^2.1.4 # For mathematical operations in the annotation system
-  # file_picker: ^5.3.0  # For selecting ZIM files in the debug interface (temporarily disabled)
-  js: ^0.6.7       # For JavaScript interop in web implementation
-  package_info_plus: ^8.3.0  # For getting app version information
+  path_provider: ^2.1.5
+  permission_handler: ^10.4.3
+  connectivity_plus: ^4.0.2
+  provider: ^6.0.5
+  xml: ^6.3.0
+  shared_preferences: ^2.1.2
+  ffi: ^2.1.0
+  package_info_plus: ^4.2.0
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1
-  mockito: ^5.4.4
-  test: ^1.24.9
-  integration_test:
-    sdk: flutter
-  build_runner: ^2.4.8
-
-dependency_overrides:
-  material_color_utilities: ^0.12.0
-  meta: ^1.16.0
-  characters: ^1.4.0
+  flutter_lints: ^2.0.2
+  mockito: ^5.4.2
+  build_runner: ^2.4.6
+  test: ^1.24.1
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/images/
     - assets/icons/
-    - assets/build_timestamp.txt

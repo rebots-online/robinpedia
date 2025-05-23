@@ -2,572 +2,128 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import '../models/zim_catalog_item.dart';
-
-/// Status of a ZIM download
-enum DownloadStatus {
-  /// Not started
-  notStarted,
-
-  /// Download in progress
-  inProgress,
-
-  /// Download paused
-  paused,
-
-  /// Download completed successfully
-  completed,
-
-  /// Download failed
-  failed,
-}
-
-/// Information about a ZIM download
-class DownloadInfo {
-  /// The ZIM catalog item being downloaded
-  final ZimCatalogItem item;
-
-  /// Current status of the download
-  final DownloadStatus status;
-
-  /// Total size in bytes
-  final int totalBytes;
-
-  /// Downloaded bytes
-  final int downloadedBytes;
-
-  /// Download progress as a percentage (0-100)
-  double get progress => totalBytes > 0 ? (downloadedBytes / totalBytes) * 100 : 0;
-
-  /// Local file path (if downloaded)
-  final String? filePath;
-
-  /// Error message (if failed)
-  final String? error;
-
-  /// Constructor
-  DownloadInfo({
-    required this.item,
-    required this.status,
-    required this.totalBytes,
-    required this.downloadedBytes,
-    this.filePath,
-    this.error,
-  });
-
-  /// Create a copy with updated values
-  DownloadInfo copyWith({
-    ZimCatalogItem? item,
-    DownloadStatus? status,
-    int? totalBytes,
-    int? downloadedBytes,
-    String? filePath,
-    String? error,
-  }) {
-    return DownloadInfo(
-      item: item ?? this.item,
-      status: status ?? this.status,
-      totalBytes: totalBytes ?? this.totalBytes,
-      downloadedBytes: downloadedBytes ?? this.downloadedBytes,
-      filePath: filePath ?? this.filePath,
-      error: error ?? this.error,
-    );
-  }
-}
+import 'download_manager.dart';
 
 /// Service for downloading ZIM files
 class ZimDownloadService {
-  /// Http client
-  final http.Client _client;
-
-  /// Base directory for storing ZIM files
-  late final Directory _baseDir;
-
-  /// Downloads currently in progress
-  final Map<String, DownloadInfo> _downloads = {};
-
-  /// Stream controllers for download progress updates
-  final Map<String, StreamController<DownloadInfo>> _progressControllers = {};
-
-  /// Currently active downloads
-  final Map<String, bool> _activeDownloads = {};
-
-  /// Initialized flag
+  final DownloadManager _manager;
+  final _downloadSubject = StreamController<Map<String, DownloadInfo>>.broadcast();
   bool _initialized = false;
+  Directory? _downloadDirectory;
 
-  /// Constructor
-  ZimDownloadService({http.Client? client}) : _client = client ?? http.Client();
+  ZimDownloadService({DownloadManager? manager})
+      : _manager = manager ?? DownloadManager();
 
   /// Initialize the service
   Future<void> initialize() async {
     if (_initialized) return;
 
     try {
-      // Get application documents directory for storing ZIM files
-      Directory appDocDir;
-
-      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-        // For desktop platforms, use the application documents directory
-        appDocDir = await getApplicationDocumentsDirectory();
-      } else {
-        // For mobile platforms, use the external storage directory if available
-        appDocDir = await getApplicationDocumentsDirectory();
+      // Create download directory
+      final appDir = await getApplicationDocumentsDirectory();
+      _downloadDirectory = Directory('${appDir.path}/zim_files');
+      
+      if (!await _downloadDirectory!.exists()) {
+        await _downloadDirectory!.create(recursive: true);
       }
 
-      debugPrint('Using base directory: ${appDocDir.path}');
-      final zimDir = Directory(path.join(appDocDir.path, 'zim_files'));
-
-      // Create directory if it doesn't exist
-      if (!await zimDir.exists()) {
-        await zimDir.create(recursive: true);
-      }
-
-      // Verify the directory is writable
-      try {
-        final testFile = File(path.join(zimDir.path, 'test_write.tmp'));
-        await testFile.writeAsString('test');
-        await testFile.delete();
-        debugPrint('Directory is writable: ${zimDir.path}');
-      } catch (e) {
-        debugPrint('Directory is not writable: ${zimDir.path}, error: $e');
-        throw Exception('Directory is not writable: ${zimDir.path}');
-      }
-
-      _baseDir = zimDir;
       _initialized = true;
-      debugPrint('ZimDownloadService initialized with directory: ${_baseDir.path}');
+      debugPrint('ZimDownloadService initialized');
     } catch (e) {
-      debugPrint('Failed to initialize ZimDownloadService: $e');
-      throw Exception('Failed to initialize ZimDownloadService: $e');
+      debugPrint('Error initializing ZimDownloadService: $e');
+      rethrow;
     }
   }
 
-  /// Get directory for storing ZIM files
-  Future<Directory> get baseDir async {
-    if (!_initialized) await initialize();
-    return _baseDir;
-  }
+  /// Stream of download status updates
+  Stream<Map<String, DownloadInfo>> get downloads => _downloadSubject.stream;
 
-  /// Check if a ZIM file is already downloaded
-  Future<bool> isDownloaded(String zimId) async {
-    if (!_initialized) await initialize();
-
-    final zimFile = File(path.join(_baseDir.path, '$zimId.zim'));
-    return await zimFile.exists();
-  }
-
-  /// Get list of downloaded ZIM files
-  Future<List<String>> getDownloadedFiles() async {
-    if (!_initialized) await initialize();
-
-    final files = await _baseDir.list().toList();
-
-    return files
-        .whereType<File>()
-        .where((file) => path.extension(file.path) == '.zim')
-        .map((file) => file.path)
-        .toList();
-  }
-
-  /// Get the file path for a ZIM file
-  Future<String?> getFilePathForZim(String zimId) async {
-    if (!_initialized) await initialize();
-
-    final zimFile = File(path.join(_baseDir.path, '$zimId.zim'));
-    if (await zimFile.exists()) {
-      return zimFile.path;
+  /// Download a ZIM file
+  Future<void> downloadZimFile(ZimCatalogItem item) async {
+    if (!_initialized) {
+      throw StateError('ZimDownloadService not initialized');
     }
-    return null;
-  }
-
-  /// Start downloading a ZIM file
-  /// Returns a stream of download progress updates
-  Stream<DownloadInfo> downloadZimFile(ZimCatalogItem item) async* {
-    if (!_initialized) await initialize();
-
-    final zimId = item.id;
-
-    // Check if download is already in progress
-    if (_downloads.containsKey(zimId)) {
-      yield* _getProgressStream(zimId);
-      return;
-    }
-
-    // Check if file is already downloaded
-    final targetFile = File(path.join(_baseDir.path, '$zimId.zim'));
-    if (await targetFile.exists()) {
-      final info = DownloadInfo(
-        item: item,
-        status: DownloadStatus.completed,
-        totalBytes: await targetFile.length(),
-        downloadedBytes: await targetFile.length(),
-        filePath: targetFile.path,
-      );
-
-      _downloads[zimId] = info;
-      yield info;
-      return;
-    }
-
-    // Create temporary file for download
-    final tempFile = File('${targetFile.path}.download');
-
-    // Create stream controller for progress updates
-    final controller = StreamController<DownloadInfo>.broadcast();
-    _progressControllers[zimId] = controller;
-
-    // Initialize download info
-    final initialInfo = DownloadInfo(
-      item: item,
-      status: DownloadStatus.notStarted,
-      totalBytes: item.size,
-      downloadedBytes: 0,
-    );
-
-    _downloads[zimId] = initialInfo;
-    controller.add(initialInfo);
-
-    // Start download in background
-    _startDownload(item, tempFile, targetFile, controller);
-
-    // Return progress stream
-    yield* controller.stream;
-  }
-
-  /// Start the actual download process
-  Future<void> _startDownload(
-    ZimCatalogItem item,
-    File tempFile,
-    File targetFile,
-    StreamController<DownloadInfo> controller,
-  ) async {
-    final zimId = item.id;
-    _activeDownloads[zimId] = true;
 
     try {
-      debugPrint('Starting download for ZIM file: ${item.id}');
-      debugPrint('Temp file path: ${tempFile.path}');
-      debugPrint('Target file path: ${targetFile.path}');
+      debugPrint('Starting download for ${item.name}');
 
-      // Update status to in progress
-      final initialBytes = await _getInitialDownloadedBytes(tempFile);
-      debugPrint('Initial downloaded bytes: $initialBytes');
-
-      _updateDownloadStatus(
-        zimId,
-        DownloadStatus.inProgress,
-        downloadedBytes: initialBytes,
-      );
-
-      // Select download URL (use first one for now)
-      final downloadUrl = item.downloadUrls.first;
-      debugPrint('Download URL: $downloadUrl');
-
-      // Get total size and resume position
-      int downloadedBytes = 0;
-      if (await tempFile.exists()) {
-        downloadedBytes = await tempFile.length();
-        debugPrint('Resuming download from $downloadedBytes bytes');
-      } else {
-        debugPrint('Creating new temp file');
-        // Ensure parent directory exists
-        final parent = tempFile.parent;
-        if (!await parent.exists()) {
-          await parent.create(recursive: true);
-        }
-        await tempFile.create(recursive: true);
+      // Ensure download directory exists
+      if (!await _downloadDirectory!.exists()) {
+        await _downloadDirectory!.create(recursive: true);
       }
 
-      // Create HTTP request with range header for resuming download
-      debugPrint('Creating HTTP request');
-      final request = http.Request('GET', Uri.parse(downloadUrl));
-      if (downloadedBytes > 0) {
-        request.headers['Range'] = 'bytes=$downloadedBytes-';
-        debugPrint('Added Range header: bytes=$downloadedBytes-');
-      }
-
-      debugPrint('Sending HTTP request');
-      final response = await _client.send(request);
-      debugPrint('HTTP response status code: ${response.statusCode}');
-
-      if (response.statusCode != 206 && response.statusCode != 200) {
-        // Try to get more information about the error
-        String errorDetails = '';
-        try {
-          final responseBody = await response.stream.bytesToString();
-          errorDetails = responseBody.isNotEmpty ? ' - $responseBody' : '';
-        } catch (_) {
-          // Ignore errors when trying to read the response body
-        }
-
-        throw Exception('Failed to download ZIM file: HTTP ${response.statusCode}$errorDetails');
-      }
-
-      // Update total size if available
-      final totalBytes = response.contentLength != null
-          ? downloadedBytes + response.contentLength!
-          : item.size;
-      debugPrint('Total bytes: $totalBytes');
-
-      _updateDownloadStatus(
-        zimId,
-        DownloadStatus.inProgress,
-        totalBytes: totalBytes,
-        downloadedBytes: downloadedBytes,
-      );
-
-      // Open file for writing
-      debugPrint('Opening file for writing: ${tempFile.path}');
-      final sink = tempFile.openWrite(mode: FileMode.append);
-
-      // Stream download data
-      final completer = Completer<void>();
-
-      int lastReportedBytes = downloadedBytes;
-      var timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        if (downloadedBytes > lastReportedBytes) {
-          _updateDownloadStatus(
-            zimId,
-            DownloadStatus.inProgress,
-            downloadedBytes: downloadedBytes,
-          );
-          lastReportedBytes = downloadedBytes;
-        }
-      });
-
-      debugPrint('Starting to stream download data');
-      response.stream.listen(
-        (data) {
-          if (_activeDownloads[zimId] == true) {
-            try {
-              sink.add(data);
-              downloadedBytes += data.length;
-              if (downloadedBytes % (1024 * 1024) == 0) { // Log every 1MB
-                debugPrint('Downloaded $downloadedBytes bytes of $totalBytes');
-              }
-            } catch (e) {
-              debugPrint('Error writing to file: $e');
-              _activeDownloads[zimId] = false;
-              sink.close();
-              timer.cancel();
-              completer.completeError(e);
-            }
-          } else {
-            // Download was paused or cancelled
-            debugPrint('Download paused or cancelled');
-            sink.close();
-            timer.cancel();
-            completer.complete();
-          }
-        },
-        onDone: () async {
-          debugPrint('Download stream completed');
-          await sink.close();
-          timer.cancel();
-
-          if (_activeDownloads[zimId] == true) {
-            try {
-              // Rename temp file to final file
-              debugPrint('Renaming temp file to final file');
-              await tempFile.rename(targetFile.path);
-
-              _updateDownloadStatus(
-                zimId,
-                DownloadStatus.completed,
-                downloadedBytes: totalBytes,
-                filePath: targetFile.path,
-              );
-              debugPrint('Download completed successfully');
-            } catch (e) {
-              debugPrint('Error finalizing download: $e');
-              _updateDownloadStatus(
-                zimId,
-                DownloadStatus.failed,
-                error: 'Error finalizing download: $e',
-              );
-            }
-          }
-
-          completer.complete();
-        },
-        onError: (error) {
-          debugPrint('Error in download stream: $error');
-          sink.close();
-          timer.cancel();
-
-          _updateDownloadStatus(
-            zimId,
-            DownloadStatus.failed,
-            error: error.toString(),
-          );
-
-          completer.complete();
-        },
-        cancelOnError: true,
-      );
-
-      await completer.future;
-    } catch (e, stackTrace) {
-      debugPrint('Error in download process: $e');
-      debugPrint('Stack trace: $stackTrace');
-      _updateDownloadStatus(
-        zimId,
-        DownloadStatus.failed,
-        error: e.toString(),
-      );
-    } finally {
-      _activeDownloads.remove(zimId);
+      await _manager.queueDownload(item);
+      
+      debugPrint('Successfully queued download for ${item.name}');
+    } catch (e) {
+      debugPrint('Error downloading ${item.name}: $e');
+      rethrow;
     }
   }
 
-  /// Get initial downloaded bytes from temp file
-  Future<int> _getInitialDownloadedBytes(File tempFile) async {
-    if (await tempFile.exists()) {
-      return await tempFile.length();
+  /// Cancel a download
+  void cancelDownload(String id) {
+    try {
+      _manager.cancelDownload(id);
+      debugPrint('Cancelled download $id');
+    } catch (e) {
+      debugPrint('Error cancelling download $id: $e');
     }
-    return 0;
-  }
-
-  /// Update download status and notify listeners
-  void _updateDownloadStatus(
-    String zimId,
-    DownloadStatus status, {
-    int? totalBytes,
-    int? downloadedBytes,
-    String? filePath,
-    String? error,
-  }) {
-    if (!_downloads.containsKey(zimId)) return;
-
-    final currentInfo = _downloads[zimId]!;
-    final updatedInfo = currentInfo.copyWith(
-      status: status,
-      totalBytes: totalBytes,
-      downloadedBytes: downloadedBytes,
-      filePath: filePath,
-      error: error,
-    );
-
-    _downloads[zimId] = updatedInfo;
-
-    final controller = _progressControllers[zimId];
-    if (controller != null && !controller.isClosed) {
-      controller.add(updatedInfo);
-
-      // Close controller if download is completed or failed
-      if (status == DownloadStatus.completed || status == DownloadStatus.failed) {
-        controller.close();
-        _progressControllers.remove(zimId);
-      }
-    }
-  }
-
-  /// Get progress stream for a download
-  Stream<DownloadInfo> _getProgressStream(String zimId) {
-    if (!_progressControllers.containsKey(zimId)) {
-      final controller = StreamController<DownloadInfo>.broadcast();
-      _progressControllers[zimId] = controller;
-
-      if (_downloads.containsKey(zimId)) {
-        controller.add(_downloads[zimId]!);
-      }
-    }
-
-    return _progressControllers[zimId]!.stream;
   }
 
   /// Pause a download
-  Future<void> pauseDownload(String zimId) async {
-    _activeDownloads[zimId] = false;
-
-    if (_downloads.containsKey(zimId)) {
-      _updateDownloadStatus(zimId, DownloadStatus.paused);
+  void pauseDownload(String id) {
+    try {
+      _manager.pauseDownload(id);
+      debugPrint('Paused download $id');
+    } catch (e) {
+      debugPrint('Error pausing download $id: $e');
     }
   }
 
   /// Resume a paused download
-  Future<void> resumeDownload(String zimId) async {
-    if (!_downloads.containsKey(zimId)) return;
-
-    final download = _downloads[zimId]!;
-    if (download.status != DownloadStatus.paused) return;
-
-    // Create temp file path
-    final tempFile = File('${_baseDir.path}/$zimId.zim.download');
-    final targetFile = File('${_baseDir.path}/$zimId.zim');
-
-    // Resume download
-    final controller = _progressControllers[zimId] ??
-        StreamController<DownloadInfo>.broadcast();
-    _progressControllers[zimId] = controller;
-
-    _startDownload(download.item, tempFile, targetFile, controller);
-  }
-
-  /// Cancel a download
-  Future<void> cancelDownload(String zimId) async {
-    await pauseDownload(zimId);
-
-    // Remove download from active downloads
-    _downloads.remove(zimId);
-
-    // Close progress controller
-    final controller = _progressControllers[zimId];
-    if (controller != null && !controller.isClosed) {
-      controller.close();
-      _progressControllers.remove(zimId);
-    }
-
-    // Delete partial download file
+  void resumeDownload(String id) {
     try {
-      final tempFile = File('${_baseDir.path}/$zimId.zim.download');
-      if (await tempFile.exists()) {
-        await tempFile.delete();
-      }
-    } catch (_) {
-      // Ignore errors when deleting temp file
-    }
-  }
-
-  /// Delete a downloaded ZIM file
-  Future<bool> deleteZimFile(String zimId) async {
-    if (!_initialized) await initialize();
-
-    try {
-      final zimFile = File(path.join(_baseDir.path, '$zimId.zim'));
-      if (await zimFile.exists()) {
-        await zimFile.delete();
-        return true;
-      }
-      return false;
+      _manager.resumeDownload(id);
+      debugPrint('Resumed download $id');
     } catch (e) {
-      return false;
+      debugPrint('Error resuming download $id: $e');
     }
   }
 
-  /// Calculate SHA-256 hash of a file
-  Future<String> calculateFileHash(File file) async {
-    final bytes = await file.readAsBytes();
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+  /// Get download information
+  DownloadInfo? getDownloadInfo(String id) {
+    try {
+      return _manager.getDownloadStatus(id);
+    } catch (e) {
+      debugPrint('Error getting download info for $id: $e');
+      return null;
+    }
   }
+
+  /// Check if a ZIM file is already downloaded or in progress
+  bool isDownloading(String id) {
+    final info = getDownloadInfo(id);
+    return info != null && 
+           info.status != DownloadStatus.completed && 
+           info.status != DownloadStatus.failed;
+  }
+
+  /// Check if a ZIM file is already downloaded
+  bool isDownloaded(String id) {
+    final info = getDownloadInfo(id);
+    return info?.status == DownloadStatus.completed;
+  }
+
+  /// Get the download directory
+  Directory? get downloadDirectory => _downloadDirectory;
 
   /// Dispose resources
   void dispose() {
-    _client.close();
-
-    // Close all progress controllers
-    for (final controller in _progressControllers.values) {
-      if (!controller.isClosed) controller.close();
-    }
-
-    _progressControllers.clear();
-    _downloads.clear();
-    _activeDownloads.clear();
+    _downloadSubject.close();
+    _manager.dispose();
   }
 }

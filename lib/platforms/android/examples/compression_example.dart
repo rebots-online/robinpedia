@@ -8,7 +8,7 @@ import '../compression_ffi.dart';
 
 /// Example of using CompressionCapability on Android
 class CompressionExample extends StatefulWidget {
-  const CompressionExample({Key? key}) : super(key: key);
+  const CompressionExample({super.key});
 
   @override
   State<CompressionExample> createState() => _CompressionExampleState();

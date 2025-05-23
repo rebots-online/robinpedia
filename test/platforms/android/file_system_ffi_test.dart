@@ -24,7 +24,7 @@ void main() {
     
     test('should write and read text files', () async {
       // Create test content
-      final content = 'Hello, world!';
+      const content = 'Hello, world!';
       
       // Write content to file
       final writeResult = await fileSystem.writeTextFile(testFilePath, content);
@@ -41,8 +41,8 @@ void main() {
     
     test('should append to text files', () async {
       // Create test content
-      final content1 = 'Hello, ';
-      final content2 = 'world!';
+      const content1 = 'Hello, ';
+      const content2 = 'world!';
       
       // Write first part
       await fileSystem.writeTextFile(testFilePath, content1);

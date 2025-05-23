@@ -8,7 +8,7 @@ import '../binary_data_ffi.dart';
 
 /// Example of using BinaryDataCapability on Android
 class BinaryDataExample extends StatefulWidget {
-  const BinaryDataExample({Key? key}) : super(key: key);
+  const BinaryDataExample({super.key});
 
   @override
   State<BinaryDataExample> createState() => _BinaryDataExampleState();
@@ -235,7 +235,7 @@ void binaryDataExample() async {
   final data = Uint8List.fromList(List.generate(1000, (i) => i % 256));
   
   // Write the data to a file
-  final filePath = '/data/local/tmp/binary_data_example.bin';
+  const filePath = '/data/local/tmp/binary_data_example.bin';
   try {
     final bytesWritten = await binaryData.writeBytes(filePath, data);
     print('Wrote $bytesWritten bytes to $filePath');

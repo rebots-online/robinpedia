@@ -49,9 +49,9 @@ class RobinpediaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget homeWidget = kIsWeb
-        ? const ZimDownloadPlaceholder()
-        : const ZimDownloadScreen();
+    const Widget homeWidget = kIsWeb
+        ? ZimDownloadPlaceholder()
+        : ZimDownloadScreen();
 
     return MaterialApp(
       title: 'Robinpedia',

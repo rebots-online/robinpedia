@@ -179,8 +179,8 @@ void main() {
     
     test('should write and read text files', () async {
       // Arrange
-      final path = '/app/documents/test.txt';
-      final content = 'Hello, world!';
+      const path = '/app/documents/test.txt';
+      const content = 'Hello, world!';
       
       // Act
       final writeResult = await fileSystem.writeTextFile(path, content);
@@ -193,9 +193,9 @@ void main() {
     
     test('should append to text files', () async {
       // Arrange
-      final path = '/app/documents/test.txt';
-      final content1 = 'Hello, ';
-      final content2 = 'world!';
+      const path = '/app/documents/test.txt';
+      const content1 = 'Hello, ';
+      const content2 = 'world!';
       
       // Act
       await fileSystem.writeTextFile(path, content1);
@@ -224,7 +224,7 @@ void main() {
     
     test('should create directories', () async {
       // Arrange
-      final path = '/app/documents/test_dir';
+      const path = '/app/documents/test_dir';
       
       // Act
       final result = await fileSystem.createDirectory(path);
@@ -237,7 +237,7 @@ void main() {
     
     test('should create directories recursively', () async {
       // Arrange
-      final path = '/app/documents/test_dir/nested/deep';
+      const path = '/app/documents/test_dir/nested/deep';
       
       // Act
       final result = await fileSystem.createDirectory(path, recursive: true);
@@ -252,7 +252,7 @@ void main() {
     
     test('should fail to create directory without recursive flag', () async {
       // Arrange
-      final path = '/app/documents/test_dir/nested/deep';
+      const path = '/app/documents/test_dir/nested/deep';
       
       // Act
       final result = await fileSystem.createDirectory(path, recursive: false);
@@ -263,7 +263,7 @@ void main() {
     
     test('should delete empty directories', () async {
       // Arrange
-      final path = '/app/documents/test_dir';
+      const path = '/app/documents/test_dir';
       await fileSystem.createDirectory(path);
       
       // Act
@@ -277,8 +277,8 @@ void main() {
     
     test('should fail to delete non-empty directories without recursive flag', () async {
       // Arrange
-      final dirPath = '/app/documents/test_dir';
-      final filePath = '$dirPath/test.txt';
+      const dirPath = '/app/documents/test_dir';
+      const filePath = '$dirPath/test.txt';
       await fileSystem.createDirectory(dirPath);
       await fileSystem.writeTextFile(filePath, 'Hello');
       
@@ -295,9 +295,9 @@ void main() {
     
     test('should delete non-empty directories with recursive flag', () async {
       // Arrange
-      final dirPath = '/app/documents/test_dir';
-      final filePath = '$dirPath/test.txt';
-      final nestedDirPath = '$dirPath/nested';
+      const dirPath = '/app/documents/test_dir';
+      const filePath = '$dirPath/test.txt';
+      const nestedDirPath = '$dirPath/nested';
       await fileSystem.createDirectory(dirPath);
       await fileSystem.createDirectory(nestedDirPath);
       await fileSystem.writeTextFile(filePath, 'Hello');
@@ -317,10 +317,10 @@ void main() {
     
     test('should list directory contents', () async {
       // Arrange
-      final dirPath = '/app/documents/test_dir';
-      final filePath1 = '$dirPath/test1.txt';
-      final filePath2 = '$dirPath/test2.txt';
-      final nestedDirPath = '$dirPath/nested';
+      const dirPath = '/app/documents/test_dir';
+      const filePath1 = '$dirPath/test1.txt';
+      const filePath2 = '$dirPath/test2.txt';
+      const nestedDirPath = '$dirPath/nested';
       await fileSystem.createDirectory(dirPath);
       await fileSystem.createDirectory(nestedDirPath);
       await fileSystem.writeTextFile(filePath1, 'Hello 1');
@@ -344,9 +344,9 @@ void main() {
     
     test('should check if path exists', () async {
       // Arrange
-      final dirPath = '/app/documents/test_dir';
-      final filePath = '/app/documents/test.txt';
-      final nonExistentPath = '/non-existent';
+      const dirPath = '/app/documents/test_dir';
+      const filePath = '/app/documents/test.txt';
+      const nonExistentPath = '/non-existent';
       await fileSystem.createDirectory(dirPath);
       await fileSystem.writeTextFile(filePath, 'Hello');
       
@@ -358,9 +358,9 @@ void main() {
     
     test('should check if path is directory', () async {
       // Arrange
-      final dirPath = '/app/documents/test_dir';
-      final filePath = '/app/documents/test.txt';
-      final nonExistentPath = '/non-existent';
+      const dirPath = '/app/documents/test_dir';
+      const filePath = '/app/documents/test.txt';
+      const nonExistentPath = '/non-existent';
       await fileSystem.createDirectory(dirPath);
       await fileSystem.writeTextFile(filePath, 'Hello');
       
@@ -372,9 +372,9 @@ void main() {
     
     test('should check if path is file', () async {
       // Arrange
-      final dirPath = '/app/documents/test_dir';
-      final filePath = '/app/documents/test.txt';
-      final nonExistentPath = '/non-existent';
+      const dirPath = '/app/documents/test_dir';
+      const filePath = '/app/documents/test.txt';
+      const nonExistentPath = '/non-existent';
       await fileSystem.createDirectory(dirPath);
       await fileSystem.writeTextFile(filePath, 'Hello');
       

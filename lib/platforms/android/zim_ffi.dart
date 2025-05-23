@@ -139,7 +139,7 @@ class FfiZimCapability implements ZimCapability {
       // TODO: Get the URL for the entry
       // This would require extracting the URL from the ZIM file
       // For now, use a placeholder URL
-      final url = 'placeholder_url';
+      const url = 'placeholder_url';
       
       final zimEntry = _convertToZimEntry(entry, url);
       results.add(zimEntry);
@@ -186,7 +186,7 @@ class FfiZimCapability implements ZimCapability {
     // This would require reading the title from the ZIM file
     // For now, use placeholder values
     final title = 'Title for $url';
-    final mimeType = 'text/html'; // Placeholder
+    const mimeType = 'text/html'; // Placeholder
     
     return ZimEntry(
       url: url,

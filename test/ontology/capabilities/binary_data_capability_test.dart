@@ -100,7 +100,7 @@ void main() {
     
     test('should write and read binary data', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4, 5]);
       
       // Act
@@ -114,7 +114,7 @@ void main() {
     
     test('should append binary data', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data1 = Uint8List.fromList([1, 2, 3]);
       final data2 = Uint8List.fromList([4, 5]);
       
@@ -130,7 +130,7 @@ void main() {
     
     test('should read binary data with offset and length', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4, 5]);
       
       // Act
@@ -153,7 +153,7 @@ void main() {
     
     test('should throw when reading with invalid offset or length', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4, 5]);
       
       // Act
@@ -178,7 +178,7 @@ void main() {
     
     test('should read binary data as a stream', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList(List.generate(100, (i) => i));
       
       // Act
@@ -195,7 +195,7 @@ void main() {
     
     test('should get file size', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4, 5]);
       
       // Act
@@ -208,7 +208,7 @@ void main() {
     
     test('should check if a file exists', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4, 5]);
       
       // Act
@@ -223,7 +223,7 @@ void main() {
     
     test('should delete a file', () async {
       // Arrange
-      final path = 'test.bin';
+      const path = 'test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4, 5]);
       
       // Act

@@ -1,6 +1,5 @@
 // Copyright (C)2025 Robin L. M. Cheung, MBA. All rights reserved.
 
-import 'package:flutter/foundation.dart';
 
 /// Status of a download
 enum DownloadStatus {
